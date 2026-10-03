@@ -281,8 +281,5 @@ node_modules/
 !.env.example
 !.env.*.example
 
-# Locally installed coding-agent tools and machine-specific configuration
-/.agents/
-/.claude/
-/.codex/
-/.mcp.json
+# Shared coding-agent configuration is intentionally versioned.
+!/.claude/settings.local.json

@@ -1,0 +1,14 @@
+[project]
+name = "docstore-client"
+version = "0.1.0"
+dependencies = ["httpx", "pydantic"]
+
+[tool.importlinter]
+root_packages = ["docstore_client"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "docstore_client: independent of every service"
+type = "forbidden"
+source_modules = ["docstore_client", "docstore_client.**"]
+forbidden_modules = ["my_service", "pydantic_settings"]

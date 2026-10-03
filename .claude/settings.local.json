@@ -1,0 +1,7 @@
+{
+  "enabledMcpjsonServers": [
+    "langchain-docs",
+    "playwright",
+    "github"
+  ]
+}
