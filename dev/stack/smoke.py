@@ -52,7 +52,33 @@ def spans(
     result = []
     for name, span_id, parent_id, operation in definitions:
         attrs = [attribute("gen_ai.operation.name", operation)] if operation else []
-        attrs += [attribute("gen_ai.input.messages", "CANARY_PRIVATE_CONTENT")]
+        content = "CANARY_LANGFUSE_ONLY_CONTENT"
+        attrs += [
+            attribute(
+                "gen_ai.input.messages",
+                json.dumps([{"role": "user", "parts": [{"type": "text", "content": content}]}]),
+            )
+        ]
+        attrs += [
+            attribute(
+                "gen_ai.output.messages",
+                json.dumps(
+                    [
+                        {
+                            "role": "assistant",
+                            "parts": [{"type": "text", "content": content}],
+                            "finish_reason": "end_turn",
+                        }
+                    ]
+                ),
+            )
+        ]
+        attrs += [
+            attribute(
+                "app.gen_ai.observation.input", json.dumps([{"role": "user", "content": content}])
+            )
+        ]
+        attrs += [attribute("app.gen_ai.observation.output", json.dumps({"canary": content}))]
         attrs += [attribute("authorization", "CANARY_PRIVATE_SECRET")]
         if not parent_id:
             attrs += [

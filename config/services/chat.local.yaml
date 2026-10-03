@@ -1,0 +1,2 @@
+# Local GenAI content is retained in Langfuse; the Tempo branch removes it.
+capture_ai_content: true

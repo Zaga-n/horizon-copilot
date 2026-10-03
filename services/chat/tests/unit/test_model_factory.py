@@ -33,6 +33,7 @@ def models() -> Iterator[AgentModels]:
     token = attempt_context.set(AttemptContext(physical_limit=24, rewrite_limit=2, search_limit=2))
     try:
         yield build_models(
+            capture_ai_content=False,
             connection=BedrockConnection(
                 region="eu-west-1",
                 connect_timeout_seconds=5,

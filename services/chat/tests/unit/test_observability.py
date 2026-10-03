@@ -74,7 +74,9 @@ async def test_physical_attempt_spans_usage_and_first_chunk_are_content_free(
 ) -> None:
     telemetry = observation.telemetry
     root = reserve(telemetry)
-    callback = ModelTelemetry(telemetry=telemetry, model_id="terra", prompt_version="v1")
+    callback = ModelTelemetry(
+        telemetry=telemetry, model_id="terra", prompt_version="v1", capture_ai_content=False
+    )
     first, second = uuid4(), uuid4()
     with root.active(), telemetry.work("tool"), telemetry.work("retrieval"):
         await callback.on_chat_model_start({}, [[HumanMessage(content=PRIVATE)]], run_id=first)

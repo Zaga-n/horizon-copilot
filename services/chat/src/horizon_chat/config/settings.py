@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     readiness_timeout_seconds: PositiveSeconds
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     log_full_exception_trace: bool
+    capture_ai_content: bool
 
     otlp_endpoint: AnyHttpUrl | None = None
     service_instance_id: str | None = None

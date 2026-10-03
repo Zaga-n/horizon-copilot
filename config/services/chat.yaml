@@ -6,6 +6,7 @@ max_output_tokens: 4096
 main_reasoning_effort: low
 utility_reasoning_effort: none
 max_chunks: 8
+capture_ai_content: false
 max_excerpt_chars: 3000
 max_evidence_chars: 24000
 turn_deadline_seconds: 120

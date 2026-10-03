@@ -120,6 +120,7 @@ def runner(
     policy = RetrievalPolicy(max_chunks=8, max_excerpt_chars=3000, max_evidence_chars=24000)
     telemetry = quiet_telemetry()
     graph = build_agent(
+        capture_ai_content=False,
         models=AgentModels(decision=decision, final=final, utility=utility),
         retriever=Retriever(
             rewrite_model=GenericFakeChatModel(messages=repeat(AIMessage(content="query"))),

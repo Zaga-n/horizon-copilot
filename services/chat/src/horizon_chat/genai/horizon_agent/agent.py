@@ -63,6 +63,7 @@ def build_agent(
     checkpointer: BaseCheckpointSaver[int] | BaseCheckpointSaver[str],
     policy: AgentPolicy,
     telemetry: Telemetry,
+    capture_ai_content: bool,
 ) -> AgentGraph:
     utility_retry = UtilityRetryPolicy(
         attempts=policy.retry_attempts,
@@ -98,7 +99,7 @@ def build_agent(
             initial_delay=policy.initial_backoff_seconds,
             max_delay=policy.max_backoff_seconds,
         ),
-        ToolTelemetry(telemetry=telemetry),
+        ToolTelemetry(telemetry=telemetry, capture_ai_content=capture_ai_content),
     ]
     return create_agent(
         model=models.decision,

@@ -133,7 +133,7 @@ trace attributable even when export is disabled or the trace was not retained.
 
 ### What the Collector keeps on spans
 
-The span allowlist keeps `gen_ai.*` identity/usage attributes, `app.conversation.id`,
+The Tempo span allowlist keeps `gen_ai.*` identity/usage attributes, `app.conversation.id`,
 `app.thread.id`, `app.turn.id`, `app.run.id`, the message IDs, `app.attempt.number`, the three
 `app.*.version` attributes, `app.document.id`, `app.job.id`, `error.type` and a few `http.*`
 names; it blanks span status messages and replaces span events with a `redacted-event` that has no
@@ -143,6 +143,13 @@ attributes. Attributes emitted by the services but **dropped**: `app.retrieval.c
 and `app.message.attempt`. By configuration (not observed in a real trace), the retrieval span in Tempo and Langfuse therefore shows timing and version, not which chunks were returned. The allowlist also names attributes no service
 emits (for example `app.chunk.ids`, `app.document_version.ids`, `app.boundary` on spans).
 [`dev/stack/verification.md`](../../dev/stack/verification.md) and the backend-telemetry spec describe retrieval references (chunk and version IDs) as retained; that is not what the Collector does for the attributes the code actually emits.
+
+The Langfuse branch uses `transform/langfuse_redact`: it additionally retains
+`gen_ai.system_instructions`, `gen_ai.input.messages`, `gen_ai.output.messages`,
+`gen_ai.tool.call.arguments` and `gen_ai.tool.call.result`. Neutral presentation
+attributes are mapped to `langfuse.observation.input` / `.output` and removed.
+These content fields are absent from Tempo. Both branches clear event attributes
+and span status messages.
 
 ## Logs
 
@@ -239,7 +246,7 @@ Configuration: [`dev/stack/collector/config.yaml`](../../dev/stack/collector/con
 | Pipeline | Processors, in order | Exporter |
 |---|---|---|
 | `traces` | `memory_limiter` (256 MiB), `transform/redact`, `batch` | `otlphttp/lgtm` → `http://lgtm:4318` (queue 1000, retry up to 60 s) |
-| `traces/langfuse` | `memory_limiter`, `transform/redact`, `filter/genai`, `transform/langfuse`, `batch` | `otlphttp/langfuse` → `http://langfuse-web:3000/api/public/otel`, Basic auth from the Langfuse project keys (queue 256, retry up to 60 s, 5 s timeout) |
+| `traces/langfuse` | `memory_limiter`, `transform/langfuse_redact`, `filter/genai`, `transform/langfuse`, `batch` | `otlphttp/langfuse` → `http://langfuse-web:3000/api/public/otel`, Basic auth from the Langfuse project keys (queue 256, retry up to 60 s, 5 s timeout) |
 | `metrics` | `memory_limiter`, `transform/redact`, `batch` | `otlphttp/lgtm` |
 
 - The OTLP receiver listens on 4317 (gRPC) and 4318 (HTTP). Compose publishes only 4318 and the
@@ -249,12 +256,18 @@ Configuration: [`dev/stack/collector/config.yaml`](../../dev/stack/collector/con
   Langfuse therefore does not receive `app.upload`, `app.status`, `app.retry`, `app.delete`,
   `app.extraction`, `app.publication`, `app.cleanup`, `app.reconciliation` or `app.maintenance`.
 - `transform/langfuse` sets `langfuse.session.id` from `app.conversation.id` and the observation
-  type (`generation` for `chat`, `embedding` for `embeddings`).
+  type (`generation` for `chat`, `embedding` for `embeddings`, `tool` for `execute_tool`).
+  The exporter uses native ingestion version 4 with the same project-key Basic auth.
 - Langfuse export uses a bounded in-memory queue: data can be lost after retries are exhausted or
   if the Collector restarts. Retried chat attempts keep distinct trace IDs and attempt numbers.
 - There is no logs pipeline; logs bypass the Collector through Alloy.
-- Content capture is off and no setting enables it. The only logging toggle is
-  `LOG_FULL_EXCEPTION_TRACE`.
+- Chat `capture_ai_content` is enabled by the local service overlay and disabled
+  in the base configuration; `CAPTURE_AI_CONTENT` overrides it. Completed calls
+  capture input/output once, with system instructions separated in the canonical
+  Bedrock representation. Failed streams capture bounded partial text with a
+  partial/truncated marker. Tool spans capture arguments/results. Langfuse keeps
+  this content; Tempo removes it regardless of the capture setting.
+- `LOG_FULL_EXCEPTION_TRACE` independently controls exception logging.
 
 ## Grafana dashboards and datasources
 
@@ -316,8 +329,8 @@ attempts with fresh trace IDs and prints one JSON line per attempt (`event: loca
 `trace_id`, `conversation_id`). The script asserts only that the Collector accepted the data
 without partial rejection. Inspect Tempo, Langfuse, Loki and Prometheus manually: the operational
 sibling span (`app.persistence` or `app.publication`) must be absent from Langfuse, and the
-canary's fake private attributes (`gen_ai.input.messages`, `authorization`, a status message) must
-be absent from both destinations. To exercise Alloy as well, run it inside an opted-in container,
+canary's input/output must appear only in Langfuse. Its `authorization` and status
+message canaries must be absent from both destinations. To exercise Alloy as well, run it inside an opted-in container,
 as shown in [`dev/stack/README.md`](../../dev/stack/README.md#verify-and-inspect).
 
 Limits of this check: its span names and attribute names do not all match what the services emit

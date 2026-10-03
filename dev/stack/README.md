@@ -144,17 +144,25 @@ encrypted data without following Langfuse's migration procedure.
 Langfuse receives the same trace IDs and the known rooted GenAI ancestor tree,
 without unrelated operational leaves. `app.conversation.id` maps to
 `langfuse.session.id`; retries keep distinct run/trace IDs and attempt numbers.
-The common redaction allowlist excludes credentials, content, events, and status
-messages from both trace branches. The application has no second Langfuse callback
+The Tempo branch removes model/system messages and tool arguments/results. The
+Langfuse branch retains this content and maps input/output to observation fields.
+Both branches remove unknown attributes, event content, and span status messages. The application has no second Langfuse callback
 and does not export ratings. Langfuse is not a runtime readiness dependency; its
 bounded in-memory export queue may lose data after retry exhaustion or Collector
 restart. Use `docker compose stop langfuse-web langfuse-worker` to test an outage
 and `docker compose up -d` to restore them.
 
-Content capture is off. The existing flag alone cannot bypass the Collector
-allowlist. An approved local capture experiment needs a separately reviewed
-Langfuse content allowlist and approved/redacted app emission; this deployment
-provides no tested capture-enabled configuration or reasoning/checkpoint dumps.
+Chat content capture is enabled in `config/services/chat.local.yaml` and disabled
+in the base service configuration. `CAPTURE_AI_CONTENT=false` disables it even
+locally. Completed model calls capture system instructions, conversation history,
+and output, including structured/tool content. Failed streams retain bounded
+partial text marked as partial or truncated. Tool spans capture arguments/results.
+Capture does not add a second exporter or per-token spans. To apply changes to a
+running stack, rebuild chat and restart the Collector:
+
+```sh
+docker compose up -d --build chat collector
+```
 
 ## Verify and inspect
 
@@ -168,7 +176,8 @@ uv run --locked python dev/stack/smoke.py --service horizon-ingestion
 
 The JSON lines give conversation and trace IDs to inspect in Tempo/Langfuse.
 The canary includes an operational sibling that must be absent from Langfuse and
-fake private attributes that must be absent from both destinations. To exercise
+fake input/output that must appear only in Langfuse. Its authorization and status
+message canaries must be absent from both destinations. To exercise
 Alloy's container stdout route too, run it in an opted-in container long enough
 for discovery:
 

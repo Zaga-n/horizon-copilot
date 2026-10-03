@@ -54,6 +54,7 @@ def cited_agent(index: PgvectorEvidenceIndex) -> LangChainHorizonAgent:
     )
     telemetry = quiet_telemetry()
     graph = build_agent(
+        capture_ai_content=False,
         models=AgentModels(
             utility=ToolModel(messages=repeat(guardrail), disable_streaming=True),
             decision=ToolModel(messages=repeat(AIMessage(content="Draft")), disable_streaming=True),

@@ -29,6 +29,7 @@ def build_chat_model(
     max_output_tokens: int,
     streaming: bool,
     telemetry: Telemetry,
+    capture_ai_content: bool,
 ) -> BaseChatModel:
     return build_bedrock_chat_model(
         connection=connection,
@@ -38,7 +39,12 @@ def build_chat_model(
         streaming=streaming,
         callbacks=(
             PhysicalAttemptBudget(),
-            ModelTelemetry(telemetry=telemetry, model_id=model_id, prompt_version=PROMPT_VERSION),
+            ModelTelemetry(
+                telemetry=telemetry,
+                model_id=model_id,
+                prompt_version=PROMPT_VERSION,
+                capture_ai_content=capture_ai_content,
+            ),
         ),
         tags=(FINAL_TAG,) if streaming else (),
     )
@@ -53,6 +59,7 @@ def build_models(
     utility_reasoning_effort: ReasoningEffort,
     max_output_tokens: int,
     telemetry: Telemetry,
+    capture_ai_content: bool,
 ) -> AgentModels:
     def main(*, streaming: bool) -> BaseChatModel:
         return build_chat_model(
@@ -62,6 +69,7 @@ def build_models(
             max_output_tokens=max_output_tokens,
             streaming=streaming,
             telemetry=telemetry,
+            capture_ai_content=capture_ai_content,
         )
 
     return AgentModels(
@@ -74,5 +82,6 @@ def build_models(
             max_output_tokens=max_output_tokens,
             streaming=False,
             telemetry=telemetry,
+            capture_ai_content=capture_ai_content,
         ),
     )

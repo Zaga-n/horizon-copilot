@@ -187,6 +187,7 @@ async def _build_agent(
     # botocore client construction is CPU-bound; keep it off the event loop.
     models = await asyncio.to_thread(
         build_models,
+        capture_ai_content=settings.capture_ai_content,
         connection=connection,
         main_model_id=settings.main_model_id,
         main_reasoning_effort=settings.main_reasoning_effort,
@@ -221,6 +222,7 @@ async def _build_agent(
     )
     return LangChainHorizonAgent(
         graph=build_agent(
+            capture_ai_content=settings.capture_ai_content,
             models=models,
             retriever=retriever,
             checkpointer=saver,
