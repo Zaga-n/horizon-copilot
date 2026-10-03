@@ -32,31 +32,31 @@ x-runtime-dependencies: &runtime-dependencies
   minio-setup:
     condition: service_completed_successfully
 x-langfuse-environment: &langfuse-environment
-  DATABASE_URL: postgresql://postgres:${LANGFUSE_DATABASE_PASSWORD:?set LANGFUSE_DATABASE_PASSWORD in .env}@langfuse-postgres:5432/langfuse
+  DATABASE_URL: postgresql://postgres:${LANGFUSE_DATABASE_PASSWORD:-horizon-local-langfuse-db}@langfuse-postgres:5432/langfuse
   NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3002}
-  SALT: ${LANGFUSE_SALT:?set LANGFUSE_SALT in .env}
-  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?set LANGFUSE_ENCRYPTION_KEY in .env}
+  SALT: ${LANGFUSE_SALT:-horizon-local-langfuse-salt}
+  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
   TELEMETRY_ENABLED: 'false'
   CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
   CLICKHOUSE_URL: http://langfuse-clickhouse:8123
   CLICKHOUSE_USER: langfuse
-  CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:?set LANGFUSE_CLICKHOUSE_PASSWORD in .env}
+  CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-horizon-local-clickhouse}
   CLICKHOUSE_CLUSTER_ENABLED: 'false'
   REDIS_HOST: langfuse-redis
   REDIS_PORT: '6379'
-  REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD:?set LANGFUSE_REDIS_PASSWORD in .env}
+  REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD:-horizon-local-redis}
   REDIS_TLS_ENABLED: 'false'
   LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
   LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
-  LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:?set LANGFUSE_MINIO_USER in .env}
-  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:?set LANGFUSE_MINIO_PASSWORD in .env}
+  LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
   LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
   LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: 'true'
   LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
   LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
   LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
-  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:?set LANGFUSE_MINIO_USER in .env}
-  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:?set LANGFUSE_MINIO_PASSWORD in .env}
+  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
   LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:${LANGFUSE_STORAGE_PORT:-19090}
   LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: 'true'
   LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
@@ -266,8 +266,8 @@ services:
       - 127.0.0.1:${COLLECTOR_HEALTH_PORT:-13133}:13133
     restart: unless-stopped
     environment:
-      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:?set LANGFUSE_PUBLIC_KEY in .env}
-      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:?set LANGFUSE_SECRET_KEY in .env}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-horizon-local}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-horizon-local-development}
   alloy:
     image: grafana/alloy:v1.18.1@sha256:0f4434c92b3e6cdac38bb129b344e1790c246f7b6e2eaffcc16a5fa363240e33
     command:
@@ -284,43 +284,43 @@ services:
   langfuse-web:
     image: langfuse/langfuse:3.160.0@sha256:348c35b5f887eaf32610f0c4052d9c78be689c4610e72569a3ac880d4e43a772
     environment:
-      DATABASE_URL: postgresql://postgres:${LANGFUSE_DATABASE_PASSWORD:?set LANGFUSE_DATABASE_PASSWORD in .env}@langfuse-postgres:5432/langfuse
+      DATABASE_URL: postgresql://postgres:${LANGFUSE_DATABASE_PASSWORD:-horizon-local-langfuse-db}@langfuse-postgres:5432/langfuse
       NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3002}
-      SALT: ${LANGFUSE_SALT:?set LANGFUSE_SALT in .env}
-      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?set LANGFUSE_ENCRYPTION_KEY in .env}
+      SALT: ${LANGFUSE_SALT:-horizon-local-langfuse-salt}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
       TELEMETRY_ENABLED: 'false'
       CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
       CLICKHOUSE_URL: http://langfuse-clickhouse:8123
       CLICKHOUSE_USER: langfuse
-      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:?set LANGFUSE_CLICKHOUSE_PASSWORD in .env}
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-horizon-local-clickhouse}
       CLICKHOUSE_CLUSTER_ENABLED: 'false'
       REDIS_HOST: langfuse-redis
       REDIS_PORT: '6379'
-      REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD:?set LANGFUSE_REDIS_PASSWORD in .env}
+      REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD:-horizon-local-redis}
       REDIS_TLS_ENABLED: 'false'
       LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
       LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
-      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:?set LANGFUSE_MINIO_USER in .env}
-      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:?set LANGFUSE_MINIO_PASSWORD in .env}
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
       LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
       LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: 'true'
       LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
       LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
       LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
-      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:?set LANGFUSE_MINIO_USER in .env}
-      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:?set LANGFUSE_MINIO_PASSWORD in .env}
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
       LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:${LANGFUSE_STORAGE_PORT:-19090}
       LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: 'true'
       LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
       LANGFUSE_S3_BATCH_EXPORT_ENABLED: 'false'
       HOSTNAME: 0.0.0.0
-      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:?set LANGFUSE_NEXTAUTH_SECRET in .env}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-horizon-local-nextauth-development-secret}
       LANGFUSE_INIT_ORG_ID: horizon
       LANGFUSE_INIT_ORG_NAME: Horizon
       LANGFUSE_INIT_PROJECT_ID: horizon-local
       LANGFUSE_INIT_PROJECT_NAME: Horizon Local
-      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:?set LANGFUSE_PUBLIC_KEY in .env}
-      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:?set LANGFUSE_SECRET_KEY in .env}
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-horizon-local}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-horizon-local-development}
       LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_USER_EMAIL:?set LANGFUSE_USER_EMAIL in .env}
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_USER_PASSWORD:?set LANGFUSE_USER_PASSWORD in .env}
     depends_on: *langfuse-dependencies
@@ -346,7 +346,7 @@ services:
     image: postgres:17.9-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609
     environment:
       POSTGRES_DB: langfuse
-      POSTGRES_PASSWORD: ${LANGFUSE_DATABASE_PASSWORD:?set LANGFUSE_DATABASE_PASSWORD in .env}
+      POSTGRES_PASSWORD: ${LANGFUSE_DATABASE_PASSWORD:-horizon-local-langfuse-db}
     volumes:
       - langfuse-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -366,7 +366,7 @@ services:
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: langfuse
-      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:?set LANGFUSE_CLICKHOUSE_PASSWORD in .env}
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-horizon-local-clickhouse}
     volumes:
       - langfuse-clickhouse-data:/var/lib/clickhouse
       - langfuse-clickhouse-logs:/var/log/clickhouse-server
@@ -384,7 +384,7 @@ services:
   langfuse-redis:
     image: redis:7.4.8-alpine@sha256:7aec734b2bb298a1d769fd8729f13b8514a41bf90fcdd1f38ec52267fbaa8ee6
     environment:
-      REDIS_PASSWORD: ${LANGFUSE_REDIS_PASSWORD:?set LANGFUSE_REDIS_PASSWORD in .env}
+      REDIS_PASSWORD: ${LANGFUSE_REDIS_PASSWORD:-horizon-local-redis}
     entrypoint:
       - /bin/sh
       - -c
@@ -403,8 +403,8 @@ services:
     image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
     command: server /data
     environment:
-      MINIO_ROOT_USER: ${LANGFUSE_MINIO_USER:?set LANGFUSE_MINIO_USER in .env}
-      MINIO_ROOT_PASSWORD: ${LANGFUSE_MINIO_PASSWORD:?set LANGFUSE_MINIO_PASSWORD in .env}
+      MINIO_ROOT_USER: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+      MINIO_ROOT_PASSWORD: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
     ports:
       - 127.0.0.1:${LANGFUSE_STORAGE_PORT:-19090}:9000
     volumes:
@@ -426,7 +426,7 @@ services:
       - -c
       - mc mb --ignore-existing local/langfuse && mc anonymous set none local/langfuse
     environment:
-      MC_HOST_local: http://${LANGFUSE_MINIO_USER:?set LANGFUSE_MINIO_USER in .env}:${LANGFUSE_MINIO_PASSWORD:?set LANGFUSE_MINIO_PASSWORD in .env}@langfuse-minio:9000
+      MC_HOST_local: http://${LANGFUSE_MINIO_USER:-langfuse-admin}:${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}@langfuse-minio:9000
     depends_on:
       langfuse-minio:
         condition: service_healthy
