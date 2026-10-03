@@ -2,15 +2,52 @@
 
 import json
 import logging
+import re
 import sys
 import traceback
 from datetime import UTC, datetime
+from typing import TypedDict
 
 from opentelemetry import trace
 
 BASE_RECORD_FIELDS = frozenset(logging.makeLogRecord({}).__dict__) | {"message", "asctime"}
 MAX_EXCEPTION_FRAMES = 32
 OTHER_EVENT = "library_log"
+POOL_LOGGER = "psycopg.pool"
+# Match reviewed, unformatted upstream templates; arguments can contain credentials.
+POOL_EVENTS = {
+    "error connecting in %r: %s": "database_connection_failed",
+    "reconnection attempt in pool %r failed after %s sec": "database_reconnection_failed",
+    "discarding broken connection: %s": "database_broken_connection_discarded",
+    "discarding closed connection: %s": "database_closed_connection_discarded",
+    "rolling back returned connection: %s": "database_returned_connection_rolled_back",
+    "rollback failed: %s: %s. Discarding connection %s": "database_connection_rollback_failed",
+    "closing returned connection: %s": "database_active_connection_closed",
+    "error resetting connection: %s": "database_connection_reset_failed",
+    "task run %s failed: %s: %s": "database_pool_task_failed",
+}
+SQLSTATE_PATTERN = re.compile(r"[0-9A-Z]{5}")
+PoolErrorFields = TypedDict("PoolErrorFields", {"error.type": str, "db.sqlstate": str}, total=False)
+
+
+def _library_event(record: logging.LogRecord) -> str:
+    if record.name == POOL_LOGGER and isinstance(record.msg, str):
+        return POOL_EVENTS.get(record.msg, OTHER_EVENT)
+    return OTHER_EVENT
+
+
+def _pool_error_fields(record: logging.LogRecord) -> PoolErrorFields:
+    """Extract bounded error metadata without rendering the upstream log arguments."""
+    fields: PoolErrorFields = {}
+    if not isinstance(record.args, tuple):
+        return fields
+    error = next((arg for arg in record.args if isinstance(arg, BaseException)), None)
+    if error is not None:
+        fields["error.type"] = type(error).__name__
+        sqlstate = getattr(error, "sqlstate", None)
+        if isinstance(sqlstate, str) and SQLSTATE_PATTERN.fullmatch(sqlstate):
+            fields["db.sqlstate"] = sqlstate
+    return fields
 
 
 class JsonLogFormatter(logging.Formatter):
@@ -38,7 +75,7 @@ class JsonLogFormatter(logging.Formatter):
             if record.name.startswith(self.logger_prefix)
             and isinstance(record.msg, str)
             and record.msg in self.events
-            else OTHER_EVENT
+            else _library_event(record)
         )
         payload: dict[str, object] = {
             "timestamp": datetime.fromtimestamp(record.created, UTC).isoformat(),
@@ -48,6 +85,8 @@ class JsonLogFormatter(logging.Formatter):
             "logger.name": record.name,
         }
         payload.update({key: record.__dict__[key] for key in self.fields if key in record.__dict__})
+        if record.name == POOL_LOGGER and event != OTHER_EVENT:
+            payload.update(_pool_error_fields(record))
         unknown = set(record.__dict__) - BASE_RECORD_FIELDS - self.fields
         if unknown:
             payload["dropped_fields"] = sorted(unknown)

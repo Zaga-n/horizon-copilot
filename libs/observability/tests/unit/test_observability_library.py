@@ -81,6 +81,73 @@ def test_other_loggers_and_unknown_events_never_emit_their_message() -> None:
     assert PRIVATE not in json.dumps(payload)
 
 
+class DatabaseConnectionError(Exception):
+    """A library error whose text is private but SQLSTATE is safe to retain."""
+
+    sqlstate = "28P01"
+
+
+@pytest.mark.parametrize("full_trace", [False, True])
+def test_pool_warning_explains_connection_failure_without_credentials(full_trace: bool) -> None:
+    record = logging.makeLogRecord(
+        {
+            "name": "psycopg.pool",
+            "levelno": logging.WARNING,
+            "levelname": "WARNING",
+            "msg": "error connecting in %r: %s",
+            "args": (PRIVATE, DatabaseConnectionError(f"password={PRIVATE}")),
+        }
+    )
+    payload = json.loads(formatter(full_exception_trace=full_trace).format(record))
+    assert payload["event"] == "database_connection_failed"
+    assert payload["level"] == "warning"
+    assert payload["error.type"] == "DatabaseConnectionError"
+    assert payload["db.sqlstate"] == "28P01"
+    assert PRIVATE not in json.dumps(payload)
+
+
+def test_pool_warning_distinguishes_returned_transaction_from_connection_failure() -> None:
+    record = logging.makeLogRecord(
+        {
+            "name": "psycopg.pool",
+            "msg": "rolling back returned connection: %s",
+            "args": (f"connection password={PRIVATE}",),
+        }
+    )
+    payload = json.loads(formatter().format(record))
+    assert payload["event"] == "database_returned_connection_rolled_back"
+    assert "error.type" not in payload
+    assert PRIVATE not in json.dumps(payload)
+
+
+@pytest.mark.parametrize(
+    ("logger_name", "message"),
+    [("sdk", "error connecting in %r: %s"), ("psycopg.pool", PRIVATE)],
+)
+def test_unknown_library_warning_cannot_bypass_safe_event_allowlist(
+    logger_name: str, message: str
+) -> None:
+    record = logging.makeLogRecord(
+        {"name": logger_name, "msg": message, "args": (PRIVATE, DatabaseConnectionError(PRIVATE))}
+    )
+    payload = json.loads(formatter().format(record))
+    assert payload["event"] == "library_log"
+    assert "error.type" not in payload
+    assert PRIVATE not in json.dumps(payload)
+
+
+def test_pool_error_rejects_private_or_malformed_sqlstate() -> None:
+    error = DatabaseConnectionError(PRIVATE)
+    error.sqlstate = PRIVATE
+    record = logging.makeLogRecord(
+        {"name": "psycopg.pool", "msg": "error resetting connection: %s", "args": (error,)}
+    )
+    payload = json.loads(formatter().format(record))
+    assert payload["event"] == "database_connection_reset_failed"
+    assert "db.sqlstate" not in payload
+    assert PRIVATE not in json.dumps(payload)
+
+
 def test_install_replaces_root_handlers(capsys: pytest.CaptureFixture[str]) -> None:
     root = logging.getLogger()
     saved, level = root.handlers[:], root.level

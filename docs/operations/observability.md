@@ -160,8 +160,31 @@ Logs are single-line JSON on stdout, formatted by `JsonLogFormatter` (installed 
   `category`, `kind`, `deduplicated`, `loop` (it also names `version_id` and `state`, which nothing emits). Any other extra key appears only by name in
   `dropped_fields`.
 - **Event names.** A log message becomes `event` only if it is in the service's `EVENTS`
-  allowlist and comes from that service's own logger; everything else is `event="library_log"`
-  with no message text.
+  allowlist and comes from that service's own logger, or matches a reviewed `psycopg.pool`
+  template below. Other messages remain `event="library_log"` with no message text.
+
+### PostgreSQL connection-pool warnings
+
+The shared formatter classifies known `psycopg.pool` message templates before their arguments
+are rendered. It retains the exception class as `error.type` and a valid five-character SQLSTATE
+as `db.sqlstate` when the library supplies an exception argument. Connection strings, connection
+objects, pool names and exception messages are never written.
+
+| Event | Meaning |
+|---|---|
+| `database_connection_failed` | A connection attempt failed; inspect `error.type` and `db.sqlstate` |
+| `database_reconnection_failed` | The pool exhausted its reconnection budget |
+| `database_broken_connection_discarded`, `database_closed_connection_discarded` | The pool discarded an unusable connection |
+| `database_returned_connection_rolled_back` | A borrowed connection returned with an open or failed transaction |
+| `database_connection_rollback_failed` | Rollback failed and the connection was discarded |
+| `database_active_connection_closed` | A connection returned while an operation was still active |
+| `database_connection_reset_failed` | The configured connection reset failed |
+| `database_pool_task_failed` | A background pool task failed |
+
+Unknown templates still use `library_log`. Historical records with that generic event cannot be
+reclassified because their original message was omitted. A connection failure reproduced against
+an unavailable local port emits `database_connection_failed` with `error.type="OperationalError"`;
+that reproduction does not establish the cause of a historical warning.
 
 ### Chat events
 
