@@ -234,7 +234,7 @@ Source: [`services/migrations/src/horizon_migrations/main.py`](../../services/mi
 `compose.yaml` interpolates the variables below from the root `.env` or the shell. These are Compose
 inputs, not application settings; Compose maps them onto the application variables above.
 
-| Group | Variables (defaults are shared local-development values in `compose.yaml`) |
+| Group | Variables (local defaults are in `compose.yaml`, except required Langfuse credentials in `.env.example`) |
 |---|---|
 | Required | `GOOGLE_CLIENT_ID`, `MAIN_MODEL_ID`, `UTILITY_MODEL_ID` (Compose fails without them) |
 | AWS | `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` |

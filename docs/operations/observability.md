@@ -21,7 +21,7 @@ The migration job, frontend, PostgreSQL and MinIO emit nothing into this pipelin
 
 Local UIs (all bound to `127.0.0.1`): Grafana on `GRAFANA_PORT` (default 3001, anonymous admin),
 Langfuse on `LANGFUSE_PORT` (default 3002, a seeded local account whose values are the
-`LANGFUSE_USER_EMAIL` / `LANGFUSE_USER_PASSWORD` defaults in `compose.yaml`), Collector health on
+`LANGFUSE_USER_EMAIL` / `LANGFUSE_USER_PASSWORD` values from `.env`, documented in `.env.example`), Collector health on
 13133. Backend health never depends on these UIs; Langfuse is not a readiness dependency.
 
 ## How telemetry is initialised
