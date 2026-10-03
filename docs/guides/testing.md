@@ -68,10 +68,10 @@ to create databases, roles and the `vector` extension. Without `TEST_DATABASE_DS
 
 ### Provision disposable infrastructure
 
-The commands below adapt the CI job ([`ci.yml`](../../.github/workflows/ci.yml)) to local, uncommon ports
-so they do not collide with the Compose stack. They were checked against the workflow, not executed
-during documentation; on Docker Desktop the host name seen from inside a container differs from CI's
-Linux runner (see the note after the block).
+The commands below use local containers on uncommon ports so they do not collide with the Compose
+stack. The MinIO images must already be cached or available through authenticated registry access.
+CI builds the matching MinIO releases from pinned upstream source commits instead (see [CI](#ci)).
+On Docker Desktop the host name seen from inside a container differs from the Linux runner.
 
 ```zsh
 docker run -d --name horizon-test-postgres \
@@ -95,12 +95,11 @@ done
 ```
 
 Provision the bucket and the restricted ingestion account the tests expect (`test-ingestion` /
-`disposable-ingestion-password`). CI uses `--network host` and `localhost`; on Docker Desktop (macOS,
-Windows) use `host.docker.internal` as the host name and drop `--network host` (substitution not
-verified here):
+`disposable-ingestion-password`). CI runs the compiled server and client directly on `localhost`.
+For a client container on Docker Desktop (macOS, Windows), use `host.docker.internal` as the host name:
 
 ```zsh
-MINIO_ADMIN_HOST=host.docker.internal   # CI (Linux): use localhost together with --network host
+MINIO_ADMIN_HOST=host.docker.internal
 docker run --rm --entrypoint /bin/sh \
   -v "$PWD/dev/stack/minio:/provision:ro" \
   -e MC_HOST_local="http://test-admin:disposable-test-password@${MINIO_ADMIN_HOST}:59000" \
@@ -204,6 +203,13 @@ suites and the [smoke test](smoke-test.md) cover those layers. Vitest also write
 
 Workflows in [`.github/workflows`](../../.github/workflows) run on every push, pull request and manual
 dispatch, cancel superseded runs, pin actions to commit SHAs and use read-only repository access.
+
+Both Python jobs install the interpreter from `.python-version` using `actions/setup-python` before
+setting up uv. The integration job builds MinIO and `mc` from the upstream commits for
+`RELEASE.2025-04-22T22-12-26Z` and `RELEASE.2025-04-16T18-13-26Z`, using their Go module checksums.
+Source checkouts under `.ci/` are excluded from Git and Docker build contexts. The server runs on
+`127.0.0.1:9000` and uses the same bucket versioning and restricted-user provisioning script as the
+local stack.
 
 | Job (required-check name) | Runs |
 |---|---|

@@ -47,6 +47,7 @@ docker-compose*.yml
 .claude
 .codex
 .mcp.json
+.ci
 dev
 openspec
 .import_linter_cache

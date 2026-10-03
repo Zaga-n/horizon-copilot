@@ -59,11 +59,45 @@ jobs:
           version: "0.12.13"
           python-version: "3.13.16"
       - run: uv sync --locked --all-packages
-      - name: Start private versioned test storage
+      # Build the same upstream releases; their container registries require authentication.
+      - name: Check out MinIO test server
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: minio/minio
+          ref: 0d7408fc9969caf07de6a8c3a84f9fbb10a6739e # RELEASE.2025-04-22T22-12-26Z
+          path: .ci/minio
+          persist-credentials: false
+      - name: Check out MinIO test client
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: minio/mc
+          ref: b00526b153a31b36767991a4f5ce2cced435ee8e # RELEASE.2025-04-16T18-13-26Z
+          path: .ci/mc
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: .ci/minio/go.mod
+          cache-dependency-path: |
+            .ci/minio/go.sum
+            .ci/mc/go.sum
+      - name: Build test storage binaries
         run: |
-          docker run -d --name ingestion-minio -p 9000:9000 -e MINIO_ROOT_USER=test-admin -e MINIO_ROOT_PASSWORD=disposable-test-password quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+          mkdir -p "$RUNNER_TEMP/minio-bin"
+          go build -C .ci/minio -mod=readonly -o "$RUNNER_TEMP/minio-bin/minio" .
+          go build -C .ci/mc -mod=readonly -o "$RUNNER_TEMP/minio-bin/mc" .
+          echo "$RUNNER_TEMP/minio-bin" >> "$GITHUB_PATH"
+      - name: Start private versioned test storage
+        env:
+          MINIO_ROOT_USER: test-admin
+          MINIO_ROOT_PASSWORD: disposable-test-password
+          MC_HOST_local: http://test-admin:disposable-test-password@localhost:9000
+          INGESTION_MINIO_ACCESS_KEY: test-ingestion
+          INGESTION_MINIO_SECRET_KEY: disposable-ingestion-password
+        run: |
+          mkdir -p artifacts
+          minio server "$RUNNER_TEMP/minio-data" --address 127.0.0.1:9000 > artifacts/minio.log 2>&1 &
           curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 1 --max-time 2 http://localhost:9000/minio/health/live
-          docker run --rm --network host --entrypoint /bin/sh -v "$PWD/dev/stack/minio:/provision:ro" -e MC_HOST_local=http://test-admin:disposable-test-password@localhost:9000 -e INGESTION_MINIO_ACCESS_KEY=test-ingestion -e INGESTION_MINIO_SECRET_KEY=disposable-ingestion-password quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z /provision/provision.sh
+          dev/stack/minio/provision.sh
       - run: docker build -f services/migrations/Dockerfile -t horizon-migrations:ci .
       - run: uv run --locked pytest -m "not live" --cov --cov-report=term-missing --cov-report=xml:artifacts/coverage.xml --junitxml=artifacts/python-integration.xml
       - name: Upload integration and coverage reports

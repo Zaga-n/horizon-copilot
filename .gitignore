@@ -283,3 +283,6 @@ node_modules/
 
 # Shared coding-agent configuration is intentionally versioned.
 !/.claude/settings.local.json
+
+# Upstream source checkouts used only by integration CI
+/.ci/
