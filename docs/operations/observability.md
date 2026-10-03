@@ -101,8 +101,9 @@ therefore **dropped before storage**: `http.request.method`, `http.response.stat
 ## Traces
 
 Boundary spans use `boundary_span`; the turn root and model spans are created directly and marked the same way: exceptions are not recorded as events and no status
-message is set; an error span carries `error.type` only. Prompts, documents, tool arguments and
-tool output are never attached.
+message is set; an error span carries `error.type` only. With chat content capture
+enabled, model spans also carry input/output and tool spans carry arguments/results.
+The Collector retains this content only on the Langfuse branch.
 
 ### Chat: one tree per attempt
 
@@ -110,7 +111,7 @@ tool output are never attached.
 |---|---|---|
 | `chat.admission` → renamed `gen_ai.invoke_agent` | Turn admission | Independent root; renamed once admission succeeds. A replayed request ends as `chat.admission`. Attributes: `gen_ai.operation.name=invoke_agent`, `gen_ai.agent.name=Horizon`, `app.conversation.id`, `app.thread.id`, `app.turn.id`, `app.run.id`, `app.user_message.id`, `app.assistant_message.id`, `app.attempt.number`, `app.agent.version`, `app.prompt.version`, `app.retrieval.version` |
 | `gen_ai.chat` | One per physical model call | `gen_ai.provider.name=aws.bedrock`, `gen_ai.request.model`, token usage when reported, `app.usage.available`, `app.cost.available=false`. Calls denied by the attempt budget get no span |
-| `app.tool` | One per tool attempt | `gen_ai.tool.name` only |
+| `app.tool` | One per tool attempt | `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`, and arguments/results when content capture is enabled |
 | `app.embedding` | Query embedding | `gen_ai.embeddings.dimension.count`, model, provider |
 | `app.retrieval` | Vector search | `app.retrieval.version=pgvector-v1`, embedding model, `k`, chunk IDs, document-version IDs, scores, ranks |
 | `app.maintenance` | Retention pass | |
