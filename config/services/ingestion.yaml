@@ -1,0 +1,31 @@
+max_upload_bytes: 52428800
+upload_timeout_seconds: 120
+max_extracted_chars: 10000000
+max_extraction_units: 5000
+extraction_timeout_seconds: 60
+window_size: 2000
+overlap: 200
+worker_concurrency: 4
+# Shared embedding-call cap: local semaphore plus DB permits across worker processes.
+vendor_concurrency: 4
+scan_interval_seconds: 2
+job_lease_seconds: 90
+heartbeat_interval_seconds: 20
+permit_lease_seconds: 45
+max_call_attempts: 3
+max_chunk_attempts: 9
+max_job_attempts: 3
+retry_initial_backoff_seconds: 0.5
+retry_max_backoff_seconds: 10
+orphan_grace_seconds: 600
+reconciliation_interval_seconds: 60
+maintenance_batch_size: 100
+object_prefix: attempts/
+# Linux spawn imports the service before parsing (~620 MiB virtual address space).
+# Keep a finite limit with headroom for supported Word/PDF parsers.
+parser_memory_bytes: 1073741824
+chunk_timeout_seconds: 120
+job_timeout_seconds: 3600
+shutdown_grace_seconds: 30
+# Mirrors the worker's compose stop_grace_period; covers the drain budget (settings test).
+stop_grace_seconds: 75

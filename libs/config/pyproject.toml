@@ -1,0 +1,9 @@
+[project]
+name = "horizon-config"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = ["pydantic-settings[yaml]==2.15.0"]
+
+[build-system]
+requires = ["hatchling>=1.32,<2"]
+build-backend = "hatchling.build"

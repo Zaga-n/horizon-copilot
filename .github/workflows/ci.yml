@@ -1,0 +1,70 @@
+name: Python quality
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    name: Python quality
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.12.13"
+          python-version: "3.13.16"
+      - run: uv sync --locked --all-packages
+      - run: scripts/quality.sh --junitxml=artifacts/python-unit.xml
+      - name: Upload unit test report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() }}
+        with:
+          name: python-unit-report
+          path: artifacts/python-unit.xml
+          retention-days: 14
+          if-no-files-found: warn
+  integration:
+    name: Python integration
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: horizon_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TEST_MINIO_ENDPOINT: http://localhost:9000
+      REQUIRE_INTEGRATION: "1"
+      TEST_DATABASE_DSN: postgresql://postgres:test@localhost:5432/horizon_test
+      MIGRATION_IMAGE: horizon-migrations:ci
+      DOCKER_DATABASE_HOST: 127.0.0.1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.12.13"
+          python-version: "3.13.16"
+      - run: uv sync --locked --all-packages
+      - name: Start private versioned test storage
+        run: |
+          docker run -d --name ingestion-minio -p 9000:9000 -e MINIO_ROOT_USER=test-admin -e MINIO_ROOT_PASSWORD=disposable-test-password quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+          curl --fail --silent --show-error --retry 30 --retry-connrefused --retry-delay 1 --max-time 2 http://localhost:9000/minio/health/live
+          docker run --rm --network host --entrypoint /bin/sh -v "$PWD/dev/stack/minio:/provision:ro" -e MC_HOST_local=http://test-admin:disposable-test-password@localhost:9000 -e INGESTION_MINIO_ACCESS_KEY=test-ingestion -e INGESTION_MINIO_SECRET_KEY=disposable-ingestion-password quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z /provision/provision.sh
+      - run: docker build -f services/migrations/Dockerfile -t horizon-migrations:ci .
+      - run: uv run --locked pytest -m "not live" --cov --cov-report=term-missing --cov-report=xml:artifacts/coverage.xml --junitxml=artifacts/python-integration.xml
+      - name: Upload integration and coverage reports
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() }}
+        with:
+          name: python-integration-reports
+          path: artifacts/
+          retention-days: 14
+          if-no-files-found: warn

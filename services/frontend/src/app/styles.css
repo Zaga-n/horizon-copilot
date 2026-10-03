@@ -1,0 +1,10 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;450;500;550;600;650;700&display=swap");
+/* Global cascade order: base, feature styles, responsive overrides, documents. */
+@import "./styles/base.css";
+@import "../features/chat/workspace.css";
+@import "../features/chat/transcript.css";
+@import "../features/feedback/feedback.css";
+@import "../shared/dialog.css";
+@import "../features/identity/signin.css";
+@import "./styles/responsive.css";
+@import "../features/documents/documents.css";

@@ -1,0 +1,56 @@
+# Version control and editor files
+.git
+.github
+.idea
+.vscode
+.DS_Store
+
+# Local Python environment; keep .python-version in the build context.
+.venv
+
+# Generated Python and tool state
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+.coverage
+.coverage.*
+htmlcov
+.mypy_cache
+.pytest_cache
+.ruff_cache
+
+# Build and runtime artifacts
+build
+dist
+*.log
+logs
+tmp
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Not required by the production package build
+**/tests
+docs
+
+# Container-development files are not copied into image layers.
+.pre-commit-config.yaml
+**/Dockerfile*
+compose*.yml
+compose*.yaml
+docker-compose*.yml
+
+# Agent tooling and sample/planning assets are outside runtime images.
+.agents
+.claude
+.codex
+.mcp.json
+dev
+openspec
+.import_linter_cache
+**/node_modules
+**/dist
+**/test-results
+**/playwright-report

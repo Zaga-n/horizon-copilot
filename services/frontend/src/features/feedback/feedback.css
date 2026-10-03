@@ -1,0 +1,20 @@
+.feedback-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.header-actions .feedback-controls {
+  margin: 0;
+}
+.feedback-controls button {
+  font-size: 12px;
+  min-height: 36px;
+}
+.rating-options {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}

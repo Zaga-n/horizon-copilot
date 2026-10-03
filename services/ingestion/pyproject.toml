@@ -1,0 +1,38 @@
+[project]
+name = "horizon-ingestion"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "boto3==1.43.107",
+    "botocore[crt]==1.43.107",
+    "fastapi==0.142.2",
+    "horizon-config",
+    "horizon-genai",
+    "horizon-google-identity",
+    "horizon-observability",
+    "horizon-schema",
+    "httpx==0.28.1",
+    "langchain-core==1.6.6",
+    "lxml==6.1.3",
+    "opentelemetry-api==1.45.0",
+    "psycopg[binary,pool]==3.3.6",
+    "pydantic==2.13.5",
+    "pydantic-settings[yaml]==2.15.0",
+    "pypdf==6.19.0",
+    "python-docx==1.2.0",
+    "python-multipart==0.0.32",
+    "sqlalchemy[asyncio]==2.0.54",
+    "structlog==26.1.0",
+    "uvicorn==0.54.0",
+]
+
+[tool.uv.sources]
+horizon-config = { workspace = true }
+horizon-genai = { workspace = true }
+horizon-google-identity = { workspace = true }
+horizon-observability = { workspace = true }
+horizon-schema = { workspace = true }
+
+[build-system]
+requires = ["hatchling>=1.32,<2"]
+build-backend = "hatchling.build"

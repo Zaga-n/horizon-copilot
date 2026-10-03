@@ -1,0 +1,21 @@
+[project]
+name = "horizon-migrations"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "alembic==1.20.0",
+    "sqlalchemy[asyncio]==2.0.54",
+    "psycopg[binary]==3.3.6",
+    "pgvector==0.5.0",
+    "langgraph-checkpoint-postgres==3.1.2",
+    "pydantic==2.13.5",
+    "pydantic-settings==2.15.0",
+    "horizon-schema",
+]
+
+[tool.uv.sources]
+horizon-schema = { workspace = true }
+
+[build-system]
+requires = ["hatchling>=1.32,<2"]
+build-backend = "hatchling.build"

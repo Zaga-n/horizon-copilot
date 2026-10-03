@@ -1,0 +1,56 @@
+dialog {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 26px;
+  width: min(520px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  color: inherit;
+  background: #fcfcf9;
+  box-shadow: 0 20px 80px #16332330;
+}
+dialog::backdrop {
+  background: #152b2255;
+}
+.dialog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.dialog-heading h2 {
+  font-size: 20px;
+  margin: 0;
+}
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 550;
+  margin-bottom: 8px;
+}
+dialog textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid #bfcdbf;
+  border-radius: 10px;
+  padding: 12px;
+  color: inherit;
+  background: white;
+  resize: vertical;
+}
+.drawer {
+  margin: 0 0 0 auto;
+  border-radius: 0;
+  width: min(430px, 100vw);
+  height: 100dvh;
+  max-height: 100dvh;
+  padding: 24px;
+  border-right: 0;
+}

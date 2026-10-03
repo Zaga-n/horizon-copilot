@@ -1,0 +1,11 @@
+identity_mode: google
+local_subject: local-horizon-user
+embedding_dimensions: 1024
+database_pool_size: 10
+database_connect_timeout_seconds: 5
+database_statement_timeout_ms: 10000
+provider_connect_timeout_seconds: 5
+provider_read_timeout_seconds: 30
+readiness_timeout_seconds: 5
+log_level: INFO
+log_full_exception_trace: false

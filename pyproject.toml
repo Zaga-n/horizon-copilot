@@ -1,0 +1,286 @@
+[tool.uv]
+required-version = "==0.12.13"
+
+[tool.uv.workspace]
+exclude = ["services/frontend"]
+members = [
+    "services/*",
+    "libs/*",
+]
+
+[dependency-groups]
+dev = [
+    "import-linter==2.15",
+    "mypy==2.4.0",
+    "pre-commit==4.6.2",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+    "ruff==0.16.10",
+    "pytest-asyncio==1.4.0",
+    "httpx==0.28.1",
+    "cryptography==50.0.2",
+    "boto3-stubs[bedrock-runtime,s3]==1.43.107",
+    "types-lxml==2026.2.16",
+]
+
+[tool.ruff]
+exclude = [".agents", ".claude", ".codex"]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E4", "E7", "E9", "F",  # pyflakes/pycodestyle errors: real bugs
+    "I",                    # isort: deterministic import order
+    "UP",                   # pyupgrade: syntax for the pinned Python
+    "B",                    # bugbear: mutable defaults, loop closures, other traps
+    "TID252",               # mandatory: absolute imports only
+    "C90",                  # mccabe: cyclomatic complexity <= max-complexity
+    "PLR0912", "PLR0915",   # too many branches / statements
+    "S101",                 # no assert in production code
+    "BLE",                  # blind except; `# noqa: BLE001 <reason>` at a real boundary
+    "ASYNC",                # blocking calls and misuse inside async code
+    "DTZ",                  # naive datetimes
+    "T20",                  # print/pprint left in code
+    "TRY400",               # log.exception, not log.error, inside except
+    "N818",                 # exception names end in Error
+    "FBT003",               # positional boolean literal in a call
+    "INP",                  # every package directory has __init__.py
+    "PIE", "RET", "SIM", "C4", "PERF", "FURB",  # simplifications and cheap performance wins
+    "PGH",                  # specific codes on noqa / type: ignore
+    "ERA",                  # commented-out code
+    "RUF",                  # Ruff-specific, incl. RUF022 sorted __all__
+]
+# Deliberately not enabled: PLR0913 (keyword-only DI constructors legitimately
+# exceed it) and EM/TRY003 (high volume, little value).
+# Consider: ANN401 (per-file ignore for true adapters), FBT001, PLR2004 (not in tests).
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "INP"]
+"**/alembic/**" = ["INP001"]  # run by Alembic from its script directory, never imported
+
+[tool.ruff.lint.isort]
+# Every import package and member test-support package (`<member>_testing`),
+# which Ruff cannot discover under tests/.
+known-first-party = ["horizon_ingestion_testing", "horizon_config", "horizon_chat_testing", "horizon_chat", "horizon_genai", "horizon_google_identity", "horizon_ingestion", "horizon_migrations", "horizon_observability", "horizon_schema"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.pytest.ini_options]
+pythonpath = ["services/chat/tests", "services/ingestion/tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = [
+    "-ra",
+    "--strict-config",
+    "--strict-markers",
+    "--import-mode=importlib",
+]
+testpaths = ["services", "libs"]
+markers = [
+    "integration: needs disposable infrastructure (database, broker, emulator)",
+    "contract: verifies a shipped compatibility surface without live infrastructure",
+    "e2e: starts the deployable and crosses several real boundaries",
+    "live: reaches a non-disposable provider; never runs in ordinary CI",
+]
+
+# Coverage is a map for review, not a gate: CI reports it on the run that
+# includes the integration profile (the only run that exercises db/).
+[tool.coverage.run]
+branch = true
+source = ["horizon_chat", "horizon_genai", "horizon_google_identity", "horizon_ingestion", "horizon_migrations", "horizon_observability", "horizon_schema"]
+omit = ["*/alembic/env.py", "*/alembic/versions/*"]  # executed by Alembic, not tests
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.mypy]
+python_version = "3.13"
+# Tests have no __init__.py and several conftest.py files, so module names come
+# from explicit bases. scripts/mypy-members.sh runs one mypy per member with
+# MYPYPATH=<member>/src:<member>/tests; one run over every member would see two
+# top-level `conftest` modules.
+explicit_package_bases = true
+strict = true
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "possibly-undefined"]
+plugins = ["pydantic.mypy"]  # keep while any member uses pydantic
+# Stubs: add boto3-stubs / types-* to the dev group. For a package with no stubs,
+# use one override block listing every such module, never per-import ignores:
+# [[tool.mypy.overrides]]
+# module = ["untyped_vendor.*"]
+# ignore_missing_imports = true
+
+[tool.importlinter]
+root_packages = ["horizon_config", "horizon_chat", "horizon_genai", "horizon_google_identity", "horizon_ingestion", "horizon_migrations", "horizon_observability", "horizon_schema"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_chat: application uses inner contracts"
+type = "forbidden"
+source_modules = ["horizon_chat.application.**"]
+forbidden_modules = ["horizon_chat.adapters", "horizon_chat.api", "horizon_chat.bootstrap", "horizon_chat.config", "horizon_chat.db", "horizon_chat.genai", "horizon_chat.workers", "boto3", "botocore", "fastapi", "httpx", "langchain", "langchain_core", "langgraph", "opentelemetry", "psycopg", "sqlalchemy", "sqlmodel", "horizon_schema"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_chat: domain and ports are pure"
+type = "forbidden"
+source_modules = ["horizon_chat.domain.**", "horizon_chat.ports.**"]
+forbidden_modules = ["horizon_chat.adapters", "horizon_chat.api", "horizon_chat.application", "horizon_chat.bootstrap", "horizon_chat.config", "horizon_chat.db", "horizon_chat.genai", "horizon_chat.observability", "horizon_chat.workers", "boto3", "botocore", "fastapi", "httpx", "langchain", "langchain_core", "langgraph", "opentelemetry", "psycopg", "sqlalchemy", "sqlmodel", "horizon_schema"]
+
+[[tool.importlinter.contracts]]
+name = "horizon_chat: implementations do not import bootstrap"
+type = "forbidden"
+source_modules = ["horizon_chat.adapters.**", "horizon_chat.api.**", "horizon_chat.db.**", "horizon_chat.genai.**", "horizon_chat.workers.**"]
+forbidden_modules = ["horizon_chat.bootstrap"]
+
+[[tool.importlinter.contracts]]
+name = "horizon_chat: entry points use contracts"
+type = "forbidden"
+source_modules = ["horizon_chat.api.**", "horizon_chat.workers.**"]
+forbidden_modules = ["horizon_chat.adapters", "horizon_chat.config", "horizon_chat.db", "horizon_chat.genai"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_chat: persistence models belong to db"
+type = "forbidden"
+source_modules = ["horizon_chat.adapters.**", "horizon_chat.api.**", "horizon_chat.application.**", "horizon_chat.bootstrap.**", "horizon_chat.config.**", "horizon_chat.domain.**", "horizon_chat.genai.**", "horizon_chat.observability.**", "horizon_chat.ports.**", "horizon_chat.workers.**"]
+forbidden_modules = ["horizon_schema"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_ingestion: application uses inner contracts"
+type = "forbidden"
+source_modules = ["horizon_ingestion.application.**"]
+forbidden_modules = ["horizon_ingestion.adapters", "horizon_ingestion.api", "horizon_ingestion.bootstrap", "horizon_ingestion.config", "horizon_ingestion.db", "horizon_ingestion.genai", "horizon_ingestion.workers", "boto3", "botocore", "fastapi", "httpx", "langchain", "langchain_core", "langgraph", "opentelemetry", "psycopg", "sqlalchemy", "sqlmodel", "horizon_schema"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_ingestion: domain and ports are pure"
+type = "forbidden"
+source_modules = ["horizon_ingestion.domain.**", "horizon_ingestion.ports.**"]
+forbidden_modules = ["horizon_ingestion.adapters", "horizon_ingestion.api", "horizon_ingestion.application", "horizon_ingestion.bootstrap", "horizon_ingestion.config", "horizon_ingestion.db", "horizon_ingestion.genai", "horizon_ingestion.observability", "horizon_ingestion.workers", "boto3", "botocore", "fastapi", "httpx", "langchain", "langchain_core", "langgraph", "opentelemetry", "psycopg", "sqlalchemy", "sqlmodel", "horizon_schema"]
+
+[[tool.importlinter.contracts]]
+name = "horizon_ingestion: implementations do not import bootstrap"
+type = "forbidden"
+source_modules = ["horizon_ingestion.adapters.**", "horizon_ingestion.api.**", "horizon_ingestion.db.**", "horizon_ingestion.genai.**", "horizon_ingestion.workers.**"]
+forbidden_modules = ["horizon_ingestion.bootstrap"]
+
+[[tool.importlinter.contracts]]
+name = "horizon_ingestion: entry points use contracts"
+type = "forbidden"
+source_modules = ["horizon_ingestion.api.**", "horizon_ingestion.workers.**"]
+forbidden_modules = ["horizon_ingestion.adapters", "horizon_ingestion.config", "horizon_ingestion.db", "horizon_ingestion.genai"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_ingestion: persistence models belong to db"
+type = "forbidden"
+source_modules = ["horizon_ingestion.adapters.**", "horizon_ingestion.api.**", "horizon_ingestion.application.**", "horizon_ingestion.bootstrap.**", "horizon_ingestion.config.**", "horizon_ingestion.domain.**", "horizon_ingestion.genai.**", "horizon_ingestion.observability.**", "horizon_ingestion.ports.**", "horizon_ingestion.workers.**"]
+forbidden_modules = ["horizon_schema"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "schema independent of services"
+type = "forbidden"
+source_modules = ["horizon_schema", "horizon_schema.**"]
+forbidden_modules = ["horizon_chat", "horizon_ingestion", "pydantic_settings"]
+
+[[tool.importlinter.contracts]]
+name = "runtime services do not run migrations"
+type = "forbidden"
+source_modules = ["horizon_chat", "horizon_ingestion", "horizon_schema"]
+forbidden_modules = ["horizon_migrations", "alembic"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "migration service is independent of application services"
+type = "forbidden"
+source_modules = ["horizon_migrations"]
+forbidden_modules = ["horizon_chat", "horizon_ingestion", "boto3", "fastapi", "langchain", "langchain_aws"]
+
+[[tool.importlinter.contracts]]
+name = "configuration independent of services"
+type = "forbidden"
+source_modules = ["horizon_config"]
+forbidden_modules = ["horizon_chat", "horizon_ingestion", "horizon_migrations", "horizon_schema"]
+
+[[tool.importlinter.contracts]]
+name = "genai library independent of services"
+type = "forbidden"
+source_modules = ["horizon_genai", "horizon_genai.**"]
+forbidden_modules = ["horizon_chat", "horizon_ingestion", "horizon_migrations", "horizon_schema", "pydantic_settings"]
+
+[[tool.importlinter.contracts]]
+name = "horizon_chat: only genai and bootstrap use the genai library"
+type = "forbidden"
+source_modules = ["horizon_chat.adapters.**", "horizon_chat.api.**", "horizon_chat.application.**", "horizon_chat.config.**", "horizon_chat.db.**", "horizon_chat.domain.**", "horizon_chat.observability.**", "horizon_chat.ports.**", "horizon_chat.workers.**"]
+forbidden_modules = ["horizon_genai"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_ingestion: only genai and bootstrap use the genai library"
+type = "forbidden"
+source_modules = ["horizon_ingestion.adapters.**", "horizon_ingestion.api.**", "horizon_ingestion.application.**", "horizon_ingestion.config.**", "horizon_ingestion.db.**", "horizon_ingestion.domain.**", "horizon_ingestion.observability.**", "horizon_ingestion.ports.**", "horizon_ingestion.workers.**"]
+forbidden_modules = ["horizon_genai"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "observability library independent of services"
+type = "forbidden"
+source_modules = ["horizon_observability", "horizon_observability.**"]
+forbidden_modules = ["horizon_chat", "horizon_ingestion", "horizon_migrations", "horizon_schema", "horizon_genai", "pydantic_settings"]
+
+[[tool.importlinter.contracts]]
+name = "horizon_chat: only observability and bootstrap use the observability library"
+type = "forbidden"
+source_modules = ["horizon_chat.adapters.**", "horizon_chat.api.**", "horizon_chat.application.**", "horizon_chat.config.**", "horizon_chat.db.**", "horizon_chat.domain.**", "horizon_chat.genai.**", "horizon_chat.ports.**", "horizon_chat.workers.**"]
+forbidden_modules = ["horizon_observability"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_ingestion: only observability and bootstrap use the observability library"
+type = "forbidden"
+source_modules = ["horizon_ingestion.adapters.**", "horizon_ingestion.api.**", "horizon_ingestion.application.**", "horizon_ingestion.config.**", "horizon_ingestion.db.**", "horizon_ingestion.domain.**", "horizon_ingestion.genai.**", "horizon_ingestion.ports.**", "horizon_ingestion.workers.**"]
+forbidden_modules = ["horizon_observability"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "google identity library independent of services"
+type = "forbidden"
+source_modules = ["horizon_google_identity", "horizon_google_identity.**"]
+forbidden_modules = ["horizon_chat", "horizon_ingestion", "horizon_migrations", "horizon_schema", "horizon_genai", "horizon_observability", "pydantic_settings"]
+
+[[tool.importlinter.contracts]]
+name = "horizon_chat: only adapters and bootstrap use the google identity library"
+type = "forbidden"
+source_modules = ["horizon_chat.api.**", "horizon_chat.application.**", "horizon_chat.config.**", "horizon_chat.db.**", "horizon_chat.domain.**", "horizon_chat.genai.**", "horizon_chat.observability.**", "horizon_chat.ports.**", "horizon_chat.workers.**"]
+forbidden_modules = ["horizon_google_identity", "google"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_ingestion: only adapters and bootstrap use the google identity library"
+type = "forbidden"
+source_modules = ["horizon_ingestion.api.**", "horizon_ingestion.application.**", "horizon_ingestion.config.**", "horizon_ingestion.db.**", "horizon_ingestion.domain.**", "horizon_ingestion.genai.**", "horizon_ingestion.observability.**", "horizon_ingestion.ports.**", "horizon_ingestion.workers.**"]
+forbidden_modules = ["horizon_google_identity", "google"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_chat: only config and bootstrap use the configuration library"
+type = "forbidden"
+source_modules = ["horizon_chat.adapters.**", "horizon_chat.api.**", "horizon_chat.application.**", "horizon_chat.db.**", "horizon_chat.domain.**", "horizon_chat.genai.**", "horizon_chat.observability.**", "horizon_chat.ports.**", "horizon_chat.workers.**"]
+forbidden_modules = ["horizon_config"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "horizon_ingestion: only config and bootstrap use the configuration library"
+type = "forbidden"
+source_modules = ["horizon_ingestion.adapters.**", "horizon_ingestion.api.**", "horizon_ingestion.application.**", "horizon_ingestion.db.**", "horizon_ingestion.domain.**", "horizon_ingestion.genai.**", "horizon_ingestion.observability.**", "horizon_ingestion.ports.**", "horizon_ingestion.workers.**"]
+forbidden_modules = ["horizon_config"]
+allow_indirect_imports = true

@@ -1,0 +1,866 @@
+{
+  "results": [
+    {
+      "check": "fresh_ordered_startup",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "live_empty_index",
+      "status": "PASS",
+      "detail": {
+        "event_id": "21923c48-ad69-477c-8eeb-51975fd809c4:6",
+        "type": "completed",
+        "conversation_id": "035c6807-d3a5-41a0-81e6-2c773f257051",
+        "turn_id": "b4725a80-47c3-4f35-a45e-55771a171a06",
+        "run_id": "21923c48-ad69-477c-8eeb-51975fd809c4",
+        "assistant_message_id": "ce08ad99-b5e1-4f19-903e-ca8e16982235",
+        "attempt_number": 1,
+        "trace_id": "19159cf2112425d65ac29f4ddb1749fd",
+        "sequence": 6,
+        "data": {}
+      }
+    },
+    {
+      "check": "lost_upload_response_replay",
+      "status": "PASS",
+      "detail": {
+        "document_id": "a22986a6-95c5-4c24-b56a-add953c870dc",
+        "version_id": "dbb6fd33-379f-49f8-aef9-a5eb3fbf4f65",
+        "job_id": "446f772a-dad6-4027-b367-b235a0f61f6e",
+        "status": "queued",
+        "deduplicated": true,
+        "retry_available": false,
+        "status_url": "/v1/ingestion-jobs/446f772a-dad6-4027-b367-b235a0f61f6e",
+        "retry_url": null
+      }
+    },
+    {
+      "check": "accepted_job_survives_worker_absence",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "startup_scan_recovers_missed_wakeup",
+      "status": "PASS",
+      "detail": {
+        "document_id": "a22986a6-95c5-4c24-b56a-add953c870dc",
+        "filename": "horizon-acceptance.docx",
+        "version_id": "dbb6fd33-379f-49f8-aef9-a5eb3fbf4f65",
+        "job_id": "446f772a-dad6-4027-b367-b235a0f61f6e",
+        "status": "ready",
+        "stage": "done",
+        "lifecycle": "live",
+        "total_chunks": 8,
+        "completed_chunks": 8,
+        "retrying_chunks": 0,
+        "failed_chunks": 0,
+        "attempts": 1,
+        "retry_cycle": 0,
+        "error_category": null,
+        "created_at": "2026-10-03T08:39:31.668568Z",
+        "updated_at": "2026-10-03T08:39:39.464756Z",
+        "retry_available": false,
+        "retry_url": null,
+        "status_url": "/v1/ingestion-jobs/446f772a-dad6-4027-b367-b235a0f61f6e"
+      }
+    },
+    {
+      "check": "pollable_chunk_progress",
+      "status": "PASS",
+      "detail": {
+        "observations": 7,
+        "total_chunks": 8
+      }
+    },
+    {
+      "check": "listener_connection_restarted",
+      "status": "PASS",
+      "detail": [
+        [
+          true
+        ]
+      ]
+    },
+    {
+      "check": "worker_listener_and_recovery_health",
+      "status": "PASS",
+      "detail": {
+        "healthy": true,
+        "listener_connected": true,
+        "recovery_scan_age_seconds": 0.958605959021952,
+        "sampled_at": 330130.406154146,
+        "max_age_seconds": 27.0
+      }
+    },
+    {
+      "check": "live_cited_turn",
+      "status": "PASS",
+      "detail": {
+        "event_id": "c94d7c40-5236-4189-978d-5e8e014ae0c1:31",
+        "type": "completed",
+        "conversation_id": "035c6807-d3a5-41a0-81e6-2c773f257051",
+        "turn_id": "0c6beb20-be88-47a4-a3f6-4c6d9ae24d05",
+        "run_id": "c94d7c40-5236-4189-978d-5e8e014ae0c1",
+        "assistant_message_id": "a6c468b6-3233-4ac8-a5ed-f09705f754bd",
+        "attempt_number": 1,
+        "trace_id": "fd67e32778d8f8a216d4f85196baf673",
+        "sequence": 31,
+        "data": {}
+      }
+    },
+    {
+      "check": "history_survives_runtime_restart",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "live_checkpoint_followup",
+      "status": "PASS",
+      "detail": {
+        "event_id": "350b79f0-9ab9-4d75-8abb-896107d51acf:22",
+        "type": "completed",
+        "conversation_id": "035c6807-d3a5-41a0-81e6-2c773f257051",
+        "turn_id": "a8f3a6bd-cf45-4511-b538-befef504926a",
+        "run_id": "350b79f0-9ab9-4d75-8abb-896107d51acf",
+        "assistant_message_id": "7a160ae9-e336-434a-94a0-06bc3f47ee20",
+        "attempt_number": 1,
+        "trace_id": "2d355d700a8454158343a3a9350b7d08",
+        "sequence": 22,
+        "data": {}
+      }
+    },
+    {
+      "check": "failed_attempt_persisted",
+      "status": "PASS",
+      "detail": {
+        "event_id": "fff790b8-c25a-48bc-8dd3-cf383b2071f2:3",
+        "type": "failed",
+        "conversation_id": "035c6807-d3a5-41a0-81e6-2c773f257051",
+        "turn_id": "8ee91c80-72eb-4b68-ae98-f3ad5319d030",
+        "run_id": "fff790b8-c25a-48bc-8dd3-cf383b2071f2",
+        "assistant_message_id": "13bf0543-c0e4-4614-8098-f72588951598",
+        "attempt_number": 1,
+        "trace_id": "bec1076fca43f4781f0886380e01dfaf",
+        "sequence": 3,
+        "data": {
+          "failure_category": "service_unavailable",
+          "persistence_pending": false,
+          "retry_available": true,
+          "text": "The answer could not be completed. Please check the saved turn before retrying."
+        }
+      }
+    },
+    {
+      "check": "same_trace_and_conversation_in_both_destinations",
+      "status": "PASS",
+      "detail": {
+        "trace_id": "fd67e32778d8f8a216d4f85196baf673",
+        "tempo_spans": 9,
+        "langfuse_observations": 9
+      }
+    },
+    {
+      "check": "langfuse_parent_closure",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "one_generation_per_physical_model_span",
+      "status": "PASS",
+      "detail": {
+        "model_spans": 5,
+        "generations": 5
+      }
+    },
+    {
+      "check": "loki_log_trace_correlation",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "credentials_and_document_content_redacted",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "default_langfuse_content_absent",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "transient_embedding_failure_preserves_completed_chunks",
+      "status": "PASS",
+      "detail": {
+        "document_id": "24cfa760-545b-4de0-962a-1fb9af9e35e8",
+        "filename": "horizon-acceptance.docx",
+        "version_id": "6b8229ab-295d-456d-92dd-19552ad237cf",
+        "job_id": "faff2669-4bdf-4158-b2a9-bbf1b205ace8",
+        "status": "failed",
+        "stage": "embedding",
+        "lifecycle": "live",
+        "total_chunks": 8,
+        "completed_chunks": 1,
+        "retrying_chunks": 0,
+        "failed_chunks": 7,
+        "attempts": 1,
+        "retry_cycle": 0,
+        "error_category": "provider_unavailable",
+        "created_at": "2026-10-03T08:50:04.586546Z",
+        "updated_at": "2026-10-03T08:50:06.341859Z",
+        "retry_available": true,
+        "retry_url": "/v1/ingestion-jobs/faff2669-4bdf-4158-b2a9-bbf1b205ace8:retry",
+        "status_url": "/v1/ingestion-jobs/faff2669-4bdf-4158-b2a9-bbf1b205ace8"
+      }
+    },
+    {
+      "check": "partial_live_embeddings_exist",
+      "status": "PASS",
+      "detail": {
+        "completed_vectors": 1
+      }
+    },
+    {
+      "check": "selective_retry_completes",
+      "status": "PASS",
+      "detail": {
+        "document_id": "24cfa760-545b-4de0-962a-1fb9af9e35e8",
+        "filename": "horizon-acceptance.docx",
+        "version_id": "6b8229ab-295d-456d-92dd-19552ad237cf",
+        "job_id": "faff2669-4bdf-4158-b2a9-bbf1b205ace8",
+        "status": "ready",
+        "stage": "done",
+        "lifecycle": "live",
+        "total_chunks": 8,
+        "completed_chunks": 8,
+        "retrying_chunks": 0,
+        "failed_chunks": 0,
+        "attempts": 2,
+        "retry_cycle": 1,
+        "error_category": null,
+        "created_at": "2026-10-03T08:50:04.586546Z",
+        "updated_at": "2026-10-03T08:50:11.370166Z",
+        "retry_available": false,
+        "retry_url": null,
+        "status_url": "/v1/ingestion-jobs/faff2669-4bdf-4158-b2a9-bbf1b205ace8"
+      }
+    },
+    {
+      "check": "completed_vectors_and_attempt_counts_unchanged",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "durable_document_deletion",
+      "status": "PASS",
+      "detail": {
+        "document_id": "a22986a6-95c5-4c24-b56a-add953c870dc",
+        "status": "ready"
+      }
+    },
+    {
+      "check": "durable_document_deletion",
+      "status": "PASS",
+      "detail": {
+        "document_id": "24cfa760-545b-4de0-962a-1fb9af9e35e8",
+        "status": "ready"
+      }
+    },
+    {
+      "check": "deleted_chunks_excluded",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "live_explicit_retry",
+      "status": "PASS",
+      "detail": {
+        "event_id": "34f7ea42-e6b4-45b2-abb6-73a790ff3210:6",
+        "type": "completed",
+        "conversation_id": "035c6807-d3a5-41a0-81e6-2c773f257051",
+        "turn_id": "8ee91c80-72eb-4b68-ae98-f3ad5319d030",
+        "run_id": "34f7ea42-e6b4-45b2-abb6-73a790ff3210",
+        "assistant_message_id": "32c5eba7-4688-4b17-bd1a-becf08523d5d",
+        "attempt_number": 7,
+        "trace_id": "1b44285cce75550725f3033309af56b6",
+        "sequence": 6,
+        "data": {}
+      }
+    },
+    {
+      "check": "failed_attempt_rated_retry_join",
+      "status": "PASS",
+      "detail": [
+        [
+          "fff790b8-c25a-48bc-8dd3-cf383b2071f2",
+          "8ee91c80-72eb-4b68-ae98-f3ad5319d030",
+          "819859a8-1435-4637-965f-98382ecce1ca",
+          "13bf0543-c0e4-4614-8098-f72588951598",
+          1,
+          "failed",
+          "bec1076fca43f4781f0886380e01dfaf",
+          null
+        ],
+        [
+          "47ea0ed7-b282-40b7-a931-4a7e78440660",
+          "8ee91c80-72eb-4b68-ae98-f3ad5319d030",
+          "819859a8-1435-4637-965f-98382ecce1ca",
+          "2b0e00e8-968d-4d25-adb3-25e198fc5911",
+          2,
+          "failed",
+          "a48114a242105d22f48f111d7187f91a",
+          null
+        ],
+        [
+          "872d8957-2a8d-4111-83f1-48f999e53dbc",
+          "8ee91c80-72eb-4b68-ae98-f3ad5319d030",
+          "819859a8-1435-4637-965f-98382ecce1ca",
+          "bf8f2b37-8d83-4357-abde-39a2ead0f96a",
+          3,
+          "failed",
+          "b8b2ebdcac98fbf900fb71d752550752",
+          null
+        ],
+        [
+          "addf2787-6ba9-4736-9497-0d029c2d8759",
+          "8ee91c80-72eb-4b68-ae98-f3ad5319d030",
+          "819859a8-1435-4637-965f-98382ecce1ca",
+          "1b7f8276-8d5c-4fd8-b515-18a66f0bf65f",
+          4,
+          "failed",
+          "a61df1f9b64c09250d21a98726e20c69",
+          null
+        ],
+        [
+          "55fcc36e-a581-494d-a254-9f2ece774db2",
+          "8ee91c80-72eb-4b68-ae98-f3ad5319d030",
+          "819859a8-1435-4637-965f-98382ecce1ca",
+          "6c042e1a-d9e6-4878-82fd-34629ba75803",
+          5,
+          "failed",
+          "22a9bfc530b7f654ba79de82aa990dac",
+          null
+        ],
+        [
+          "860d135b-ad37-446e-a0a1-c625efa2c132",
+          "8ee91c80-72eb-4b68-ae98-f3ad5319d030",
+          "819859a8-1435-4637-965f-98382ecce1ca",
+          "5888cb7c-9f71-43cd-a5c0-641b1f5fa859",
+          6,
+          "failed",
+          "a4cde7d4a54a2e7b72d317fc3776411c",
+          null
+        ],
+        [
+          "34f7ea42-e6b4-45b2-abb6-73a790ff3210",
+          "8ee91c80-72eb-4b68-ae98-f3ad5319d030",
+          "819859a8-1435-4637-965f-98382ecce1ca",
+          "32c5eba7-4688-4b17-bd1a-becf08523d5d",
+          7,
+          "completed",
+          "1b44285cce75550725f3033309af56b6",
+          "like"
+        ]
+      ]
+    },
+    {
+      "check": "retention_startup_catchup_preserves_documents",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "retention_checkpoint_cleanup",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "final_real_index_ready",
+      "status": "PASS",
+      "detail": {
+        "document_id": "77c7e095-c7d0-4825-b6b2-de8a182943ab",
+        "filename": "horizon-acceptance.docx",
+        "version_id": "0ad1e946-3c38-44ab-9489-c0d468696798",
+        "job_id": "1501ff42-62d7-44be-83b0-d272f4983698",
+        "status": "ready",
+        "stage": "done",
+        "lifecycle": "live",
+        "total_chunks": 8,
+        "completed_chunks": 8,
+        "retrying_chunks": 0,
+        "failed_chunks": 0,
+        "attempts": 1,
+        "retry_cycle": 0,
+        "error_category": null,
+        "created_at": "2026-10-03T08:54:06.216488Z",
+        "updated_at": "2026-10-03T08:54:08.835505Z",
+        "retry_available": false,
+        "retry_url": null,
+        "status_url": "/v1/ingestion-jobs/1501ff42-62d7-44be-83b0-d272f4983698"
+      }
+    },
+    {
+      "check": "final_live_cited_turn",
+      "status": "PASS",
+      "detail": {
+        "event_id": "8360225b-9459-46f5-b0b1-395651fafeeb:29",
+        "type": "completed",
+        "conversation_id": "601762a1-8826-4469-a3da-4392b2e44d8c",
+        "turn_id": "efad4142-23f4-4c53-b124-1e1bcbbfac68",
+        "run_id": "8360225b-9459-46f5-b0b1-395651fafeeb",
+        "assistant_message_id": "ef042d7d-c821-4b0b-9ace-0c9a9f5b94fe",
+        "attempt_number": 1,
+        "trace_id": "b816857daa28e71a130ed65b4efdbf10",
+        "sequence": 29,
+        "data": {}
+      }
+    },
+    {
+      "check": "final_failed_provider_attempt",
+      "status": "PASS",
+      "detail": {
+        "event_id": "0742b3c5-8d65-4164-aa31-08d95036061d:3",
+        "type": "failed",
+        "conversation_id": "601762a1-8826-4469-a3da-4392b2e44d8c",
+        "turn_id": "76e8692e-ea66-4225-87f8-a843a9189206",
+        "run_id": "0742b3c5-8d65-4164-aa31-08d95036061d",
+        "assistant_message_id": "64d7f4aa-fb99-4b01-96bd-f956c56a5191",
+        "attempt_number": 1,
+        "trace_id": "9c0194a59aec7825a7e933d0153df4d1",
+        "sequence": 3,
+        "data": {
+          "failure_category": "service_unavailable",
+          "persistence_pending": false,
+          "retry_available": true,
+          "text": "The answer could not be completed. Please check the saved turn before retrying."
+        }
+      }
+    },
+    {
+      "check": "final_generation_backed_retry",
+      "status": "PASS",
+      "detail": {
+        "event_id": "a2b1c639-2044-4b79-8a1c-4939ba1ccc4c:25",
+        "type": "completed",
+        "conversation_id": "601762a1-8826-4469-a3da-4392b2e44d8c",
+        "turn_id": "76e8692e-ea66-4225-87f8-a843a9189206",
+        "run_id": "a2b1c639-2044-4b79-8a1c-4939ba1ccc4c",
+        "assistant_message_id": "e8c8444f-fd7f-43fb-810b-860efcd70a53",
+        "attempt_number": 2,
+        "trace_id": "d741ad015b070a61fde298b0aa168245",
+        "sequence": 25,
+        "data": {}
+      }
+    },
+    {
+      "check": "final_failed_rated_retry_join",
+      "status": "PASS",
+      "detail": [
+        [
+          "0742b3c5-8d65-4164-aa31-08d95036061d",
+          "76e8692e-ea66-4225-87f8-a843a9189206",
+          "d080e04d-9637-4ac9-94ff-bc6dea1be6a8",
+          "64d7f4aa-fb99-4b01-96bd-f956c56a5191",
+          1,
+          "failed",
+          "9c0194a59aec7825a7e933d0153df4d1",
+          null
+        ],
+        [
+          "a2b1c639-2044-4b79-8a1c-4939ba1ccc4c",
+          "76e8692e-ea66-4225-87f8-a843a9189206",
+          "d080e04d-9637-4ac9-94ff-bc6dea1be6a8",
+          "e8c8444f-fd7f-43fb-810b-860efcd70a53",
+          2,
+          "completed",
+          "d741ad015b070a61fde298b0aa168245",
+          "like"
+        ]
+      ]
+    },
+    {
+      "check": "same_trace_and_conversation_in_both_destinations",
+      "status": "PASS",
+      "detail": {
+        "trace_id": "b816857daa28e71a130ed65b4efdbf10",
+        "tempo_spans": 9,
+        "langfuse_observations": 9
+      }
+    },
+    {
+      "check": "langfuse_parent_closure",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "one_generation_per_physical_model_span",
+      "status": "PASS",
+      "detail": {
+        "model_spans": 5,
+        "generations": 5
+      }
+    },
+    {
+      "check": "loki_log_trace_correlation",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "credentials_and_document_content_redacted",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "default_langfuse_content_absent",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "same_trace_and_conversation_in_both_destinations",
+      "status": "PASS",
+      "detail": {
+        "trace_id": "d741ad015b070a61fde298b0aa168245",
+        "tempo_spans": 9,
+        "langfuse_observations": 9
+      }
+    },
+    {
+      "check": "langfuse_parent_closure",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "one_generation_per_physical_model_span",
+      "status": "PASS",
+      "detail": {
+        "model_spans": 5,
+        "generations": 5
+      }
+    },
+    {
+      "check": "loki_log_trace_correlation",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "credentials_and_document_content_redacted",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "default_langfuse_content_absent",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "real_dashboard_metric_observations",
+      "status": "PASS",
+      "detail": [
+        {
+          "panel": "Request errors",
+          "series": 1
+        },
+        {
+          "panel": "Agent latency p95",
+          "series": 1
+        },
+        {
+          "panel": "Model latency p95",
+          "series": 1
+        },
+        {
+          "panel": "First chunk p95",
+          "series": 1
+        },
+        {
+          "panel": "Model first chunk p95",
+          "series": 1
+        },
+        {
+          "panel": "Retrieval latency p95",
+          "series": 1
+        },
+        {
+          "panel": "Tool calls",
+          "series": 1
+        },
+        {
+          "panel": "Input/output tokens",
+          "series": 2
+        },
+        {
+          "panel": "Completed jobs",
+          "series": 2
+        },
+        {
+          "panel": "Job errors",
+          "series": 1
+        },
+        {
+          "panel": "Queue age p95",
+          "series": 1
+        },
+        {
+          "panel": "Job latency p95",
+          "series": 1
+        },
+        {
+          "panel": "Completed chunks",
+          "series": 1
+        },
+        {
+          "panel": "Vendor calls",
+          "series": 1
+        },
+        {
+          "panel": "Vendor retries",
+          "series": 1
+        },
+        {
+          "panel": "Orphan objects removed",
+          "series": 1
+        }
+      ]
+    },
+    {
+      "check": "failed_and_rated_retry_session_grouping",
+      "status": "PASS",
+      "detail": {
+        "trace_id": "9c0194a59aec7825a7e933d0153df4d1",
+        "run_id": "0742b3c5-8d65-4164-aa31-08d95036061d",
+        "rating": null
+      }
+    },
+    {
+      "check": "feedback_not_copied_to_telemetry",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "check": "failed_and_rated_retry_session_grouping",
+      "status": "PASS",
+      "detail": {
+        "trace_id": "d741ad015b070a61fde298b0aa168245",
+        "run_id": "a2b1c639-2044-4b79-8a1c-4939ba1ccc4c",
+        "rating": "like"
+      }
+    },
+    {
+      "check": "feedback_not_copied_to_telemetry",
+      "status": "PASS",
+      "detail": null
+    }
+  ],
+  "manifest": {
+    "conversation_id": "601762a1-8826-4469-a3da-4392b2e44d8c",
+    "upload": {
+      "document_id": "a22986a6-95c5-4c24-b56a-add953c870dc",
+      "version_id": "dbb6fd33-379f-49f8-aef9-a5eb3fbf4f65",
+      "job_id": "446f772a-dad6-4027-b367-b235a0f61f6e",
+      "status": "queued",
+      "deduplicated": false,
+      "retry_available": false,
+      "status_url": "/v1/ingestion-jobs/446f772a-dad6-4027-b367-b235a0f61f6e",
+      "retry_url": null
+    },
+    "cited_terminal": {
+      "event_id": "8360225b-9459-46f5-b0b1-395651fafeeb:29",
+      "type": "completed",
+      "conversation_id": "601762a1-8826-4469-a3da-4392b2e44d8c",
+      "turn_id": "efad4142-23f4-4c53-b124-1e1bcbbfac68",
+      "run_id": "8360225b-9459-46f5-b0b1-395651fafeeb",
+      "assistant_message_id": "ef042d7d-c821-4b0b-9ace-0c9a9f5b94fe",
+      "attempt_number": 1,
+      "trace_id": "b816857daa28e71a130ed65b4efdbf10",
+      "sequence": 29,
+      "data": {}
+    },
+    "cited_sources": [
+      {
+        "event_id": "c94d7c40-5236-4189-978d-5e8e014ae0c1:30",
+        "type": "sources",
+        "conversation_id": "035c6807-d3a5-41a0-81e6-2c773f257051",
+        "turn_id": "0c6beb20-be88-47a4-a3f6-4c6d9ae24d05",
+        "run_id": "c94d7c40-5236-4189-978d-5e8e014ae0c1",
+        "assistant_message_id": "a6c468b6-3233-4ac8-a5ed-f09705f754bd",
+        "attempt_number": 1,
+        "trace_id": "fd67e32778d8f8a216d4f85196baf673",
+        "sequence": 30,
+        "data": {
+          "sources": [
+            {
+              "marker": "S1",
+              "chunk_id": "883b3797-21a1-5226-a4f2-156565eee440",
+              "document_id": "a22986a6-95c5-4c24-b56a-add953c870dc",
+              "document_version_id": "dbb6fd33-379f-49f8-aef9-a5eb3fbf4f65",
+              "title": "Horizon-X acceptance evidence",
+              "filename": "horizon-acceptance.docx",
+              "file_type": "docx",
+              "locators": [
+                {
+                  "start_offset": 0,
+                  "end_offset": 29
+                },
+                {
+                  "start_offset": 30,
+                  "end_offset": 2619
+                }
+              ],
+              "start_offset": 0,
+              "end_offset": 2000,
+              "unavailable": false
+            }
+          ]
+        }
+      }
+    ],
+    "selective_upload": {
+      "document_id": "24cfa760-545b-4de0-962a-1fb9af9e35e8",
+      "version_id": "6b8229ab-295d-456d-92dd-19552ad237cf",
+      "job_id": "faff2669-4bdf-4158-b2a9-bbf1b205ace8",
+      "status": "queued",
+      "deduplicated": false,
+      "retry_available": false,
+      "status_url": "/v1/ingestion-jobs/faff2669-4bdf-4158-b2a9-bbf1b205ace8",
+      "retry_url": null
+    },
+    "retry_terminal": {
+      "event_id": "a2b1c639-2044-4b79-8a1c-4939ba1ccc4c:25",
+      "type": "completed",
+      "conversation_id": "601762a1-8826-4469-a3da-4392b2e44d8c",
+      "turn_id": "76e8692e-ea66-4225-87f8-a843a9189206",
+      "run_id": "a2b1c639-2044-4b79-8a1c-4939ba1ccc4c",
+      "assistant_message_id": "e8c8444f-fd7f-43fb-810b-860efcd70a53",
+      "attempt_number": 2,
+      "trace_id": "d741ad015b070a61fde298b0aa168245",
+      "sequence": 25,
+      "data": {}
+    },
+    "feedback_join": [
+      [
+        "0742b3c5-8d65-4164-aa31-08d95036061d",
+        "76e8692e-ea66-4225-87f8-a843a9189206",
+        "d080e04d-9637-4ac9-94ff-bc6dea1be6a8",
+        "64d7f4aa-fb99-4b01-96bd-f956c56a5191",
+        1,
+        "failed",
+        "9c0194a59aec7825a7e933d0153df4d1",
+        null
+      ],
+      [
+        "a2b1c639-2044-4b79-8a1c-4939ba1ccc4c",
+        "76e8692e-ea66-4225-87f8-a843a9189206",
+        "d080e04d-9637-4ac9-94ff-bc6dea1be6a8",
+        "e8c8444f-fd7f-43fb-810b-860efcd70a53",
+        2,
+        "completed",
+        "d741ad015b070a61fde298b0aa168245",
+        "like"
+      ]
+    ],
+    "final_upload": {
+      "document_id": "77c7e095-c7d0-4825-b6b2-de8a182943ab",
+      "version_id": "0ad1e946-3c38-44ab-9489-c0d468696798",
+      "job_id": "1501ff42-62d7-44be-83b0-d272f4983698",
+      "status": "queued",
+      "deduplicated": false,
+      "retry_available": false,
+      "status_url": "/v1/ingestion-jobs/1501ff42-62d7-44be-83b0-d272f4983698",
+      "retry_url": null
+    },
+    "final_conversation_id": "601762a1-8826-4469-a3da-4392b2e44d8c",
+    "observability": {
+      "traces": [
+        {
+          "trace_id": "b816857daa28e71a130ed65b4efdbf10",
+          "tempo_spans": 9,
+          "langfuse_observations": 9,
+          "generation_count": 5,
+          "loki_streams": 6
+        },
+        {
+          "trace_id": "d741ad015b070a61fde298b0aa168245",
+          "tempo_spans": 9,
+          "langfuse_observations": 9,
+          "generation_count": 5,
+          "loki_streams": 6
+        }
+      ],
+      "dashboard_queries": [
+        {
+          "panel": "Request errors",
+          "series": 1
+        },
+        {
+          "panel": "Agent latency p95",
+          "series": 1
+        },
+        {
+          "panel": "Model latency p95",
+          "series": 1
+        },
+        {
+          "panel": "First chunk p95",
+          "series": 1
+        },
+        {
+          "panel": "Model first chunk p95",
+          "series": 1
+        },
+        {
+          "panel": "Retrieval latency p95",
+          "series": 1
+        },
+        {
+          "panel": "Tool calls",
+          "series": 1
+        },
+        {
+          "panel": "Input/output tokens",
+          "series": 2
+        },
+        {
+          "panel": "Completed jobs",
+          "series": 2
+        },
+        {
+          "panel": "Job errors",
+          "series": 1
+        },
+        {
+          "panel": "Queue age p95",
+          "series": 1
+        },
+        {
+          "panel": "Job latency p95",
+          "series": 1
+        },
+        {
+          "panel": "Completed chunks",
+          "series": 1
+        },
+        {
+          "panel": "Vendor calls",
+          "series": 1
+        },
+        {
+          "panel": "Vendor retries",
+          "series": 1
+        },
+        {
+          "panel": "Orphan objects removed",
+          "series": 1
+        }
+      ]
+    }
+  },
+  "environment": {
+    "project": "horizon-acceptance-20261003",
+    "date": "2026-10-03",
+    "identity": "explicit loopback local identity; no Google login",
+    "providers": "real Bedrock Terra/Luna and Titan V2; temporary InvokeModel throttling fault only for selective retry",
+    "memory_mib": 3278.3,
+    "running_containers": 14,
+    "docker": "29.1.3",
+    "compose": "5.0.0-desktop.1"
+  }
+}

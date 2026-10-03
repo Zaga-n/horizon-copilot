@@ -1,0 +1,31 @@
+.signin {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 30px;
+  background:
+    radial-gradient(ellipse at 70% 30%, #e4ece0, transparent 70%), #f5f6ee;
+}
+.signin-card {
+  width: min(460px, 100%);
+  padding: 40px 30px;
+}
+.signin-card .brand {
+  margin-bottom: 60px;
+}
+.signin-card h1 {
+  font-size: clamp(36px, 5vw, 52px);
+  line-height: 1.12;
+  letter-spacing: -2px;
+  font-weight: 550;
+}
+.signin-card > p:not(.eyebrow) {
+  color: var(--muted);
+  font-size: 15px;
+  margin-bottom: 28px;
+}
+.signin-card small {
+  display: block;
+  font-size: 12px;
+  margin-top: 26px;
+}

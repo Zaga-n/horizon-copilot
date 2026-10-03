@@ -1,0 +1,37 @@
+[project]
+name = "horizon-chat"
+version = "0.1.0"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi==0.142.2",
+    "uvicorn==0.54.0",
+    "pydantic==2.13.5",
+    "pydantic-settings[yaml]==2.15.0",
+    "sqlalchemy[asyncio]==2.0.54",
+    "psycopg[binary,pool]==3.3.6",
+    "langchain==1.4.3",
+    "langchain-core==1.6.6",
+    "langgraph==1.2.12",
+    "langgraph-checkpoint-postgres==3.1.2",
+    "httpx==0.28.1",
+    "opentelemetry-api==1.45.0",
+    "structlog==26.1.0",
+    "horizon-config",
+    "horizon-genai",
+    "horizon-google-identity",
+    "horizon-observability",
+    "horizon-schema",
+    "boto3==1.43.107",
+    "botocore[crt]==1.43.107",
+]
+
+[tool.uv.sources]
+horizon-config = { workspace = true }
+horizon-genai = { workspace = true }
+horizon-google-identity = { workspace = true }
+horizon-observability = { workspace = true }
+horizon-schema = { workspace = true }
+
+[build-system]
+requires = ["hatchling>=1.32,<2"]
+build-backend = "hatchling.build"

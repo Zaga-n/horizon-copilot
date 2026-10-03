@@ -1,0 +1,64 @@
+name: Frontend quality
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    name: Frontend quality
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: services/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test -- --reporter=default --reporter=junit --outputFile=test-results/vitest.xml
+      - name: Upload unit test report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() }}
+        with:
+          name: frontend-unit-report
+          path: services/frontend/test-results/vitest.xml
+          retention-days: 14
+          if-no-files-found: warn
+  browser:
+    name: Frontend browser
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/frontend
+    env:
+      PLAYWRIGHT_HTML_OPEN: never
+      PLAYWRIGHT_JUNIT_OUTPUT_FILE: test-results/playwright.xml
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: services/frontend/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser -- --reporter=line,github,html,junit --workers=2 --forbid-only
+      - name: Upload browser reports and failure traces
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() }}
+        with:
+          name: frontend-browser-reports
+          path: |
+            services/frontend/playwright-report/
+            services/frontend/test-results/
+          retention-days: 14
+          if-no-files-found: warn

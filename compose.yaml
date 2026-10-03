@@ -1,0 +1,484 @@
+# Local development only. Credential defaults are shared development values.
+name: horizon-local
+x-health:
+  interval: 5s
+  timeout: 5s
+  retries: 30
+  start_period: 10s
+x-ingestion-environment: &ingestion-environment
+  INGESTION_ENVIRONMENT_NAME: local
+  INGESTION_BIND_HOST: 0.0.0.0
+  INGESTION_BIND_PORT: '8081'
+  INGESTION_IDENTITY_MODE: google
+  INGESTION_FRONTEND_ORIGIN: "http://localhost:3000"
+  INGESTION_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?set GOOGLE_CLIENT_ID}
+  INGESTION_AWS_REGION: ${AWS_REGION:-eu-west-1}
+  INGESTION_EMBEDDING_MODEL_ID: amazon.titan-embed-text-v2:0
+  INGESTION_AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+  INGESTION_AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+  INGESTION_AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+  INGESTION_DATABASE_DSN: postgresql://ingestion_runtime:${INGESTION_DATABASE_PASSWORD:-horizon-local-ingestion}@postgres:5432/horizon
+  INGESTION_MINIO_ENDPOINT: http://minio:9000
+  INGESTION_MINIO_BUCKET: horizon-documents
+  INGESTION_MINIO_ACCESS_KEY: ${INGESTION_MINIO_ACCESS_KEY:-horizon-ingestion}
+  INGESTION_MINIO_SECRET_KEY: ${INGESTION_MINIO_SECRET_KEY:-horizon-local-minio-ingestion}
+  INGESTION_OTLP_ENDPOINT: http://collector:4318
+  INGESTION_SCAN_INTERVAL_SECONDS: '2'
+x-runtime-dependencies: &runtime-dependencies
+  runtime-grants:
+    condition: service_completed_successfully
+  migrations:
+    condition: service_completed_successfully
+  minio-setup:
+    condition: service_completed_successfully
+x-langfuse-environment: &langfuse-environment
+  DATABASE_URL: postgresql://postgres:${LANGFUSE_DATABASE_PASSWORD:-horizon-local-langfuse-db}@langfuse-postgres:5432/langfuse
+  NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3002}
+  SALT: ${LANGFUSE_SALT:-horizon-local-langfuse-salt}
+  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+  TELEMETRY_ENABLED: 'false'
+  CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+  CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+  CLICKHOUSE_USER: langfuse
+  CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-horizon-local-clickhouse}
+  CLICKHOUSE_CLUSTER_ENABLED: 'false'
+  REDIS_HOST: langfuse-redis
+  REDIS_PORT: '6379'
+  REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD:-horizon-local-redis}
+  REDIS_TLS_ENABLED: 'false'
+  LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+  LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
+  LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+  LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: 'true'
+  LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+  LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+  LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+  LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
+  LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:${LANGFUSE_STORAGE_PORT:-19090}
+  LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: 'true'
+  LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+  LANGFUSE_S3_BATCH_EXPORT_ENABLED: 'false'
+x-langfuse-dependencies: &langfuse-dependencies
+  langfuse-postgres:
+    condition: service_healthy
+  langfuse-clickhouse:
+    condition: service_healthy
+  langfuse-redis:
+    condition: service_healthy
+  langfuse-storage-setup:
+    condition: service_completed_successfully
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.2-pg17-trixie@sha256:5c97c57367a485a8e99389548db67d441ab1a878f5492c3df04989f34ecf3c75
+    environment:
+      POSTGRES_DB: horizon
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-horizon-local-admin}
+      APP_MIGRATOR_PASSWORD: ${APP_MIGRATOR_PASSWORD:-horizon-local-app-migrator}
+      CHECKPOINT_MIGRATOR_PASSWORD: ${CHECKPOINT_MIGRATOR_PASSWORD:-horizon-local-checkpoint-migrator}
+      CHAT_DATABASE_PASSWORD: ${CHAT_DATABASE_PASSWORD:-horizon-local-chat}
+      INGESTION_DATABASE_PASSWORD: ${INGESTION_DATABASE_PASSWORD:-horizon-local-ingestion}
+    ports:
+      - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./dev/stack/postgres/provision.sql:/docker-entrypoint-initdb.d/10-horizon.sql:ro
+      - ./services/migrations/sql:/schema:ro
+    healthcheck:
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+      test:
+        - CMD-SHELL
+        - pg_isready -U postgres -d horizon
+    restart: unless-stopped
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-horizon-admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-horizon-local-minio-admin}
+    ports:
+      - 127.0.0.1:${MINIO_PORT:-9000}:9000
+      - 127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+      test:
+        - CMD
+        - curl
+        - -fsS
+        - http://localhost:9000/minio/health/live
+    restart: unless-stopped
+  minio-setup:
+    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3
+    entrypoint:
+      - /bin/sh
+      - /provision/provision.sh
+    environment:
+      MC_HOST_local: http://${MINIO_ROOT_USER:-horizon-admin}:${MINIO_ROOT_PASSWORD:-horizon-local-minio-admin}@minio:9000
+      INGESTION_MINIO_ACCESS_KEY: ${INGESTION_MINIO_ACCESS_KEY:-horizon-ingestion}
+      INGESTION_MINIO_SECRET_KEY: ${INGESTION_MINIO_SECRET_KEY:-horizon-local-minio-ingestion}
+    volumes:
+      - ./dev/stack/minio:/provision:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: 'no'
+  migrations:
+    build:
+      context: .
+      dockerfile: services/migrations/Dockerfile
+    environment:
+      MIGRATION_DATABASE_DSN: postgresql://app_migrator:${APP_MIGRATOR_PASSWORD:-horizon-local-app-migrator}@postgres:5432/horizon
+      CHECKPOINT_MIGRATION_DSN: postgresql://checkpoint_migrator:${CHECKPOINT_MIGRATOR_PASSWORD:-horizon-local-checkpoint-migrator}@postgres:5432/horizon
+      CHECKPOINT_MIGRATION_ROLE: checkpoint_migrator
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+  runtime-grants:
+    image: pgvector/pgvector:0.8.2-pg17-trixie@sha256:5c97c57367a485a8e99389548db67d441ab1a878f5492c3df04989f34ecf3c75
+    entrypoint:
+      - psql
+      - -h
+      - postgres
+      - -U
+      - postgres
+      - -d
+      - horizon
+      - -v
+      - ON_ERROR_STOP=1
+      - -f
+      - /schema/runtime_grants.sql
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-horizon-local-admin}
+    volumes:
+      - ./services/migrations/sql:/schema:ro
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    restart: 'no'
+  chat:
+    build:
+      context: .
+      dockerfile: services/chat/Dockerfile
+    environment:
+      ENVIRONMENT_NAME: local
+      BIND_HOST: 0.0.0.0
+      BIND_PORT: '8080'
+      IDENTITY_MODE: google
+      FRONTEND_ORIGIN: "http://localhost:3000"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?set GOOGLE_CLIENT_ID}
+      AWS_REGION: ${AWS_REGION:-eu-west-1}
+      MAIN_MODEL_ID: ${MAIN_MODEL_ID:?set MAIN_MODEL_ID}
+      UTILITY_MODEL_ID: ${UTILITY_MODEL_ID:?set UTILITY_MODEL_ID}
+      EMBEDDING_MODEL_ID: amazon.titan-embed-text-v2:0
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      DATABASE_DSN: postgresql://chat_runtime:${CHAT_DATABASE_PASSWORD:-horizon-local-chat}@postgres:5432/horizon
+      CHECKPOINT_DATABASE_DSN: postgresql://chat_runtime:${CHAT_DATABASE_PASSWORD:-horizon-local-chat}@postgres:5432/horizon
+      OTLP_ENDPOINT: http://collector:4318
+      RETENTION_DAYS: '30'
+      MAINTENANCE_INTERVAL_SECONDS: '86400'
+    ports:
+      - 127.0.0.1:8080:8080
+    depends_on: *runtime-dependencies
+    healthcheck:
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/ready', timeout=3).close()
+    labels:
+      horizon.logs: 'true'
+    restart: unless-stopped
+    # Covers MAINTENANCE_SHUTDOWN_GRACE_SECONDS plus in-flight requests (settings test).
+    stop_grace_period: 15s
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    environment:
+      <<: *ingestion-environment
+      INGESTION_SERVICE_INSTANCE_ID: ingestion-api
+    ports:
+      - 127.0.0.1:8081:8081
+    depends_on: *runtime-dependencies
+    healthcheck:
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/ready', timeout=3).close()
+    labels:
+      horizon.logs: 'true'
+    restart: unless-stopped
+  ingestion-worker:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    command:
+      - python
+      - -m
+      - horizon_ingestion.main
+      - worker
+    environment:
+      <<: *ingestion-environment
+      INGESTION_SERVICE_INSTANCE_ID: ingestion-worker
+    depends_on: *runtime-dependencies
+    labels:
+      horizon.logs: 'true'
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, python, -m, horizon_ingestion.main, worker-health]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    # Equals INGESTION stop_grace_seconds; the worker validates its drain budget against it.
+    stop_grace_period: 75s
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.159.0@sha256:1f2c54a30e713fac6b3ae77a1ec84010c2007e29ced8ec666214fc2f6739c1cc
+    command:
+      - --config=/etc/otelcol/config.yaml
+    volumes:
+      - ./dev/stack/collector/config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - 127.0.0.1:${OTLP_PORT:-4318}:4318
+      - 127.0.0.1:${COLLECTOR_HEALTH_PORT:-13133}:13133
+    restart: unless-stopped
+    environment:
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-horizon-local}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-horizon-local-development}
+  alloy:
+    image: grafana/alloy:v1.18.1@sha256:0f4434c92b3e6cdac38bb129b344e1790c246f7b6e2eaffcc16a5fa363240e33
+    command:
+      - run
+      - --storage.path=/var/lib/alloy
+      - /etc/alloy/config.alloy
+    environment:
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-horizon-local}
+    volumes:
+      - ./dev/stack/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy
+    restart: unless-stopped
+  langfuse-web:
+    image: langfuse/langfuse:3.160.0@sha256:348c35b5f887eaf32610f0c4052d9c78be689c4610e72569a3ac880d4e43a772
+    environment:
+      DATABASE_URL: postgresql://postgres:${LANGFUSE_DATABASE_PASSWORD:-horizon-local-langfuse-db}@langfuse-postgres:5432/langfuse
+      NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3002}
+      SALT: ${LANGFUSE_SALT:-horizon-local-langfuse-salt}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      TELEMETRY_ENABLED: 'false'
+      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
+      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
+      CLICKHOUSE_USER: langfuse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-horizon-local-clickhouse}
+      CLICKHOUSE_CLUSTER_ENABLED: 'false'
+      REDIS_HOST: langfuse-redis
+      REDIS_PORT: '6379'
+      REDIS_AUTH: ${LANGFUSE_REDIS_PASSWORD:-horizon-local-redis}
+      REDIS_TLS_ENABLED: 'false'
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://langfuse-minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: 'true'
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:${LANGFUSE_STORAGE_PORT:-19090}
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: 'true'
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      LANGFUSE_S3_BATCH_EXPORT_ENABLED: 'false'
+      HOSTNAME: 0.0.0.0
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-horizon-local-nextauth-development-secret}
+      LANGFUSE_INIT_ORG_ID: horizon
+      LANGFUSE_INIT_ORG_NAME: Horizon
+      LANGFUSE_INIT_PROJECT_ID: horizon-local
+      LANGFUSE_INIT_PROJECT_NAME: Horizon Local
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-horizon-local}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-horizon-local-development}
+      LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_USER_EMAIL:-admin@admin.com}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_USER_PASSWORD:-admin}
+    depends_on: *langfuse-dependencies
+    ports:
+      - 127.0.0.1:${LANGFUSE_PORT:-3002}:3000
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:3000/api/public/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
+    restart: unless-stopped
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3.160.0@sha256:867e0c6c5b894288dd2e7a0f41399d6386a490761578bece97ab92df2cec40a0
+    environment: *langfuse-environment
+    depends_on: *langfuse-dependencies
+    restart: unless-stopped
+  langfuse-postgres:
+    image: postgres:17.9-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609
+    environment:
+      POSTGRES_DB: langfuse
+      POSTGRES_PASSWORD: ${LANGFUSE_DATABASE_PASSWORD:-horizon-local-langfuse-db}
+    volumes:
+      - langfuse-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD
+        - pg_isready
+        - -U
+        - postgres
+        - -d
+        - langfuse
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+  langfuse-clickhouse:
+    image: clickhouse/clickhouse-server:25.8.18.1-alpine@sha256:4c4f6e375d80e743a46fa61eae291b30dda6cc36f1ac4a0d001e21aaaac0c04c
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: langfuse
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-horizon-local-clickhouse}
+    volumes:
+      - langfuse-clickhouse-data:/var/lib/clickhouse
+      - langfuse-clickhouse-logs:/var/log/clickhouse-server
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -q
+        - --spider
+        - http://127.0.0.1:8123/ping
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+  langfuse-redis:
+    image: redis:7.4.8-alpine@sha256:7aec734b2bb298a1d769fd8729f13b8514a41bf90fcdd1f38ec52267fbaa8ee6
+    environment:
+      REDIS_PASSWORD: ${LANGFUSE_REDIS_PASSWORD:-horizon-local-redis}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - exec redis-server --requirepass "$$REDIS_PASSWORD" --maxmemory-policy noeviction --appendonly yes
+    volumes:
+      - langfuse-redis-data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+  langfuse-minio:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z@sha256:a1ea29fa28355559ef137d71fc570e508a214ec84ff8083e39bc5428980b015e
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: ${LANGFUSE_MINIO_USER:-langfuse-admin}
+      MINIO_ROOT_PASSWORD: ${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}
+    ports:
+      - 127.0.0.1:${LANGFUSE_STORAGE_PORT:-19090}:9000
+    volumes:
+      - langfuse-minio-data:/data
+    healthcheck:
+      test:
+        - CMD
+        - curl
+        - -fsS
+        - http://localhost:9000/minio/health/live
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+  langfuse-storage-setup:
+    image: quay.io/minio/mc:RELEASE.2025-04-16T18-13-26Z@sha256:aead63c77f9db9107f1696fb08ecb0faeda23729cde94b0f663edf4fe09728e3
+    entrypoint:
+      - /bin/sh
+      - -c
+      - mc mb --ignore-existing local/langfuse && mc anonymous set none local/langfuse
+    environment:
+      MC_HOST_local: http://${LANGFUSE_MINIO_USER:-langfuse-admin}:${LANGFUSE_MINIO_PASSWORD:-horizon-local-langfuse-minio}@langfuse-minio:9000
+    depends_on:
+      langfuse-minio:
+        condition: service_healthy
+    restart: 'no'
+  lgtm:
+    image: grafana/otel-lgtm:0.30.2@sha256:069e79be4fcc648b13f22ded28146f0b2d94f7f48681a55aa4995566a0bbdd02
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: 'true'
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: 'true'
+      GF_ANALYTICS_REPORTING_ENABLED: 'false'
+      PROMETHEUS_EXTRA_ARGS: --storage.tsdb.retention.time=7d
+    ports:
+      - 127.0.0.1:${GRAFANA_PORT:-3001}:3000
+    volumes:
+      - lgtm-data:/data
+      - ./dev/stack/grafana/provisioning:/otel-lgtm/grafana/conf/provisioning:ro
+      - ./dev/stack/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/api/health && curl -fsS http://127.0.0.1:13133/ready
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
+    restart: unless-stopped
+    stop_grace_period: 30s
+  frontend:
+    build:
+      context: .
+      dockerfile: services/frontend/Dockerfile
+    environment:
+      FRONTEND_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?set GOOGLE_CLIENT_ID}
+      FRONTEND_CHAT_API_URL: http://localhost:8080
+      FRONTEND_INGESTION_API_URL: http://localhost:8081
+    ports: ["127.0.0.1:3000:80"]
+    healthcheck:
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/health]
+    restart: unless-stopped
+
+volumes:
+  postgres-data: null
+  minio-data: null
+  alloy-data: null
+  langfuse-postgres-data: null
+  langfuse-clickhouse-data: null
+  langfuse-clickhouse-logs: null
+  langfuse-redis-data: null
+  langfuse-minio-data: null
+  lgtm-data: null

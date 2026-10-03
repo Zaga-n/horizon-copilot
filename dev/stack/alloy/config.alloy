@@ -1,0 +1,46 @@
+// Only opted-in application containers, restricted to this Compose project.
+discovery.docker "horizon" {
+  host = "unix:///var/run/docker.sock"
+  filter {
+    name = "label"
+    values = ["com.docker.compose.project=" + sys.env("COMPOSE_PROJECT_NAME"), "horizon.logs=true"]
+  }
+}
+discovery.relabel "horizon" {
+  targets = discovery.docker.horizon.targets
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label = "compose_service"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_id"]
+    target_label = "container_id"
+  }
+}
+loki.source.docker "horizon" {
+  host = "unix:///var/run/docker.sock"
+  targets = discovery.relabel.horizon.output
+  forward_to = [loki.process.horizon.receiver]
+}
+loki.process "horizon" {
+  stage.json {
+    expressions = {
+      service = "\"service.name\"",
+      trace_id = "trace_id",
+      span_id = "span_id",
+      level = "level",
+    }
+  }
+  stage.labels {
+    values = { service_name = "service", level = "level" }
+  }
+  stage.structured_metadata {
+    values = { trace_id = "trace_id", span_id = "span_id" }
+  }
+  forward_to = [loki.write.local.receiver]
+}
+loki.write "local" {
+  endpoint {
+    url = "http://lgtm:3100/loki/api/v1/push"
+  }
+}

@@ -1,0 +1,22 @@
+name: Docker builds
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    name: Docker build (${{ matrix.service }})
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [chat, ingestion, migrations, frontend]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build service image
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: docker build --file "services/$SERVICE/Dockerfile" --tag "horizon-$SERVICE:ci" .

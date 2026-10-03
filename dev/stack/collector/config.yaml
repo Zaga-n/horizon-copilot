@@ -1,0 +1,108 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  transform/redact:
+    error_mode: propagate
+    trace_statements:
+      - context: resource
+        statements:
+          - keep_keys(attributes, ["service.name", "service.namespace", "service.version", "service.instance.id", "deployment.environment.name"])
+      - context: span
+        statements:
+          - keep_keys(attributes, ["gen_ai.operation.name", "gen_ai.provider.name", "gen_ai.request.model", "gen_ai.agent.name", "gen_ai.tool.name", "gen_ai.usage.input_tokens", "gen_ai.usage.output_tokens", "gen_ai.embeddings.dimension.count", "app.conversation.id", "app.thread.id", "app.turn.id", "app.run.id", "app.user_message.id", "app.assistant_message.id", "app.attempt.number", "app.agent.version", "app.prompt.version", "app.retrieval.version", "app.boundary", "app.document.id", "app.document_version.id", "app.job.id", "app.chunk.id", "app.chunk.ids", "app.document_version.ids", "error.type", "http.request.method", "http.response.status_code", "http.route"])
+          - set(status.message, "")
+      - context: spanevent
+        statements:
+          - keep_keys(attributes, [])
+          - set(name, "redacted-event")
+    metric_statements:
+      - context: resource
+        statements:
+          - keep_keys(attributes, ["service.name", "service.namespace", "service.version", "service.instance.id", "deployment.environment.name"])
+      - context: datapoint
+        statements:
+          - keep_keys(attributes, ["app.boundary", "outcome", "gen_ai.request.model", "gen_ai.token.type", "gen_ai.operation.name", "kind", "state", "error.type", "stage"])
+  filter/genai:
+    error_mode: propagate
+    traces:
+      span:
+        # Known application span topology: every retained model ancestor is
+        # in this set. No arbitrary attribute-only filter that orphans children.
+        - 'not IsMatch(name, "^(gen_ai\\..*|chat\\.admission|app\\.(agent|model|tool|retrieval|embedding|job))$")'
+  transform/langfuse:
+    error_mode: propagate
+    trace_statements:
+      - context: span
+        statements:
+          - set(attributes["langfuse.session.id"], attributes["app.conversation.id"]) where attributes["app.conversation.id"] != nil
+          - set(attributes["langfuse.observation.type"], "generation") where attributes["gen_ai.operation.name"] == "chat"
+          - set(attributes["langfuse.observation.type"], "embedding") where attributes["gen_ai.operation.name"] == "embeddings"
+  batch:
+    timeout: 1s
+    send_batch_size: 512
+exporters:
+  otlphttp/lgtm:
+    endpoint: http://lgtm:4318
+    sending_queue:
+      queue_size: 1000
+    retry_on_failure:
+      max_elapsed_time: 60s
+  otlphttp/langfuse:
+    endpoint: http://langfuse-web:3000/api/public/otel
+    auth:
+      authenticator: basicauth/langfuse
+    sending_queue:
+      queue_size: 256
+      num_consumers: 2
+    retry_on_failure:
+      initial_interval: 1s
+      max_interval: 10s
+      max_elapsed_time: 60s
+    timeout: 5s
+extensions:
+  basicauth/langfuse:
+    client_auth:
+      username: ${env:LANGFUSE_PUBLIC_KEY}
+      password: ${env:LANGFUSE_SECRET_KEY}
+  health_check:
+    endpoint: 0.0.0.0:13133
+service:
+  telemetry:
+    resource:
+      service.name: horizon-collector
+      deployment.environment.name: local
+    logs:
+      encoding: json
+    metrics:
+      level: normal
+      readers:
+        - periodic:
+            interval: 10000
+            timeout: 5000
+            exporter:
+              otlp:
+                protocol: http/protobuf
+                endpoint: http://lgtm:9090/api/v1/otlp/v1/metrics
+  extensions: [health_check, basicauth/langfuse]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/redact, batch]
+      exporters: [otlphttp/lgtm]
+    traces/langfuse:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/redact, filter/genai, transform/langfuse, batch]
+      exporters: [otlphttp/langfuse]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, transform/redact, batch]
+      exporters: [otlphttp/lgtm]
