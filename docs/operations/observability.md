@@ -109,8 +109,8 @@ The Collector retains this content only on the Langfuse branch.
 
 | Span | Created by | Notes |
 |---|---|---|
-| `chat.admission` → renamed `gen_ai.invoke_agent` | Turn admission | Independent root; renamed once admission succeeds. A replayed request ends as `chat.admission`. Attributes: `gen_ai.operation.name=invoke_agent`, `gen_ai.agent.name=Horizon`, `app.conversation.id`, `app.thread.id`, `app.turn.id`, `app.run.id`, `app.user_message.id`, `app.assistant_message.id`, `app.attempt.number`, `app.agent.version`, `app.prompt.version`, `app.retrieval.version` |
-| `gen_ai.chat` | One per physical model call | `gen_ai.provider.name=aws.bedrock`, `gen_ai.request.model`, token usage when reported, `app.usage.available`, `app.cost.available=false`. Calls denied by the attempt budget get no span |
+| `chat.admission` → renamed `gen_ai.invoke_agent` | Turn admission | Independent root; renamed once admission succeeds. A replayed request ends as `chat.admission`. Attributes: `gen_ai.operation.name=invoke_agent`, `gen_ai.agent.name=Horizon`, `app.conversation.id`, `app.thread.id`, `app.turn.id`, `app.run.id`, `app.user_message.id`, `app.assistant_message.id`, `app.attempt.number`, `app.agent.version`, `app.prompt.version`, `app.retrieval.version`, `app.agent.time_to_first_chunk` (seconds, set once the first answer text is sent) |
+| `gen_ai.chat` | One per physical model call | `gen_ai.provider.name=aws.bedrock`, `gen_ai.request.model`, token usage when reported, `gen_ai.response.time_to_first_chunk` (seconds, set on the first non-empty token), `app.usage.available`, `app.cost.available=false`. Calls denied by the attempt budget get no span |
 | `app.tool` | One per tool attempt | `gen_ai.operation.name=execute_tool`, `gen_ai.tool.name`, and arguments/results when content capture is enabled |
 | `app.embedding` | Query embedding | `gen_ai.embeddings.dimension.count`, model, provider |
 | `app.retrieval` | Vector search | `app.retrieval.version=pgvector-v1`, embedding model, `k`, chunk IDs, document-version IDs, scores, ranks |
@@ -134,7 +134,7 @@ trace attributable even when export is disabled or the trace was not retained.
 
 ### What the Collector keeps on spans
 
-The Tempo span allowlist keeps `gen_ai.*` identity/usage attributes, `app.conversation.id`,
+The Tempo span allowlist keeps `gen_ai.*` identity/usage attributes, both `*.time_to_first_chunk` attributes, `app.conversation.id`,
 `app.thread.id`, `app.turn.id`, `app.run.id`, the message IDs, `app.attempt.number`, the three
 `app.*.version` attributes, `app.document.id`, `app.job.id`, `error.type` and a few `http.*`
 names; it blanks span status messages and replaces span events with a `redacted-event` that has no
@@ -159,24 +159,30 @@ Logs are single-line JSON on stdout, formatted by `JsonLogFormatter` (installed 
 - **Always present:** `timestamp` (UTC ISO-8601), `level` (lower case), `event`, `service.name`,
   `logger.name`.
 - **When a span is current:** `trace_id` (32 hex), `span_id` (16 hex).
-- **Errors:** `error.type` (class name). `exception.frames` (last 32 `{file, function, line}`) only
-  when `LOG_FULL_EXCEPTION_TRACE=true`. Exception messages, stack text and source lines are never
-  written.
+- **Errors:** `error.type` (class name). With `LOG_FULL_EXCEPTION_TRACE=true`, also
+  `exception.message` and `exception.stacktrace` (the full cause chain), both redacted; the
+  stacktrace keeps its last 16,000 characters and sets `app.error.stacktrace_truncated=true` when
+  cut. With `false` (the default), exception text is never written: it can carry personal data.
 - **Allowlisted extras only.** Chat: `conversation_id`, `turn_id`, `run_id`, `assistant_message_id`,
   `attempt_number`, `failure_category`, `persistence_pending`, `purged_count`, `failed_count`,
   `loop`, `repaired_count` (the allowlist also names `recovery_path`, which nothing emits). Ingestion: `job_id`, `document_id`, `generation`, `attempt`,
   `category`, `kind`, `deduplicated`, `loop` (it also names `version_id` and `state`, which nothing emits). Any other extra key appears only by name in
   `dropped_fields`.
-- **Event names.** A log message becomes `event` only if it is in the service's `EVENTS`
-  allowlist and comes from that service's own logger, or matches a reviewed `psycopg.pool`
-  template below. Other messages remain `event="library_log"` with no message text.
+- **Event names.** A service's own logger emits its message as `event`; the text is never written
+  otherwise. A snake_case name missing from the service's `EVENTS` allowlist keeps its name and
+  gains `event.unregistered=true`; any other own-logger text becomes `library_log`.
+- **Third-party records** are `event="library_log"` (or a reviewed `psycopg.pool` event below) and
+  keep their rendered `message` in both exception modes, passed through
+  `horizon_observability.redaction` (credentials, tokens and URL secrets become `[REDACTED]`) and
+  cut to 2,000 characters. Noisy or content-bearing namespaces are controlled by log level, not by
+  dropping messages.
 
 ### PostgreSQL connection-pool warnings
 
 The shared formatter classifies known `psycopg.pool` message templates before their arguments
 are rendered. It retains the exception class as `error.type` and a valid five-character SQLSTATE
-as `db.sqlstate` when the library supplies an exception argument. Connection strings, connection
-objects, pool names and exception messages are never written.
+as `db.sqlstate` when the library supplies an exception argument. The rendered message is kept
+like any other library message, with credentials redacted.
 
 | Event | Meaning |
 |---|---|
@@ -189,8 +195,8 @@ objects, pool names and exception messages are never written.
 | `database_connection_reset_failed` | The configured connection reset failed |
 | `database_pool_task_failed` | A background pool task failed |
 
-Unknown templates still use `library_log`. Historical records with that generic event cannot be
-reclassified because their original message was omitted. A connection failure reproduced against
+Unknown templates still use `library_log`, now with their redacted message. Records written before
+this change cannot be reclassified because their original message was omitted. A connection failure reproduced against
 an unavailable local port emits `database_connection_failed` with `error.type="OperationalError"`;
 that reproduction does not establish the cause of a historical warning.
 
@@ -222,8 +228,7 @@ that reproduction does not establish the cause of a historical warning.
 | `ingestion_loop_unavailable`, `ingestion_loop_recovered`, `ingestion_loop_crashed` | WARNING / INFO / ERROR | Supervised loop state |
 | `request_failed` | ERROR | A 5xx produced by an exception handler (503 dependency or identity outages, 500 integrity faults) or by the catch-all for unmapped exceptions |
 
-A few emitted logs are not in the allowlist and surface as `library_log` (for example chat `loop_shutdown_cancelled` and `retrieval_row_corrupt`, ingestion `ingestion_heartbeat_failed` and the ERROR-level `ingestion_status_corrupt`), and
-two allowlisted names (`guardrail_blocked`, `ingestion_document_deleted`) have no emitter.
+Two allowlisted names (`guardrail_blocked`, `ingestion_document_deleted`) have no emitter.
 
 **Correlation caveats (expected from the code; not checked at runtime).**
 `turn_completed` is written outside the turn's active span, so it probably has no `trace_id`.

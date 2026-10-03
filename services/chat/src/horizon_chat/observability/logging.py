@@ -16,6 +16,8 @@ EVENTS = frozenset(
         "recovery_completed",
         "request_failed",
         "guardrail_blocked",
+        "loop_shutdown_cancelled",
+        "retrieval_row_corrupt",
     }
 )
 FIELDS = frozenset(
@@ -32,6 +34,7 @@ FIELDS = frozenset(
         "loop",
         "recovery_path",
         "repaired_count",
+        "chunk_id",
     }
 )
 

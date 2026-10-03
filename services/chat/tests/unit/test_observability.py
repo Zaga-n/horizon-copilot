@@ -109,6 +109,11 @@ async def test_physical_attempt_spans_usage_and_first_chunk_are_content_free(
     models = [span for span in spans if span.name == "gen_ai.chat"]
     assert len(models) == 2 and models[0].status.status_code.name == "ERROR"
     assert models[1].attributes and models[1].attributes["gen_ai.usage.input_tokens"] == 17
+    # Only the attempt that streamed carries its first-chunk time, so a slow trace shows it.
+    assert "gen_ai.response.time_to_first_chunk" not in (models[0].attributes or {})
+    first_chunk = models[1].attributes["gen_ai.response.time_to_first_chunk"]
+    assert isinstance(first_chunk, float)
+    assert first_chunk >= 0
     assert len({span.context.trace_id for span in spans if span.context}) == 1
     assert PRIVATE not in str([(span.attributes, span.events) for span in spans])
     data = observation.reader.get_metrics_data()
@@ -130,6 +135,34 @@ async def test_physical_attempt_spans_usage_and_first_chunk_are_content_free(
     )
 
 
+def test_agent_first_answer_is_recorded_once_on_metric_and_root_span(
+    observation: Observation,
+) -> None:
+    root = reserve(observation.telemetry)
+    root.answer_started()
+    root.answer_started()
+    root.discard()
+    (span,) = observation.exporter.get_finished_spans()
+    assert span.attributes is not None
+    first_answer = span.attributes["app.agent.time_to_first_chunk"]
+    assert isinstance(first_answer, float)
+    assert first_answer >= 0
+    data = observation.reader.get_metrics_data()
+    assert data is not None
+    points = [
+        point
+        for resource in data.resource_metrics
+        for scope in resource.scope_metrics
+        for metric in scope.metrics
+        if metric.name == "app.agent.time_to_first_chunk"
+        for point in metric.data.data_points
+        if isinstance(point, HistogramDataPoint)
+    ]
+    assert sum(point.count for point in points) == 1
+    # The metric and the span report the same measurement, not two clocks.
+    assert points[0].sum == pytest.approx(first_answer)
+
+
 @pytest.mark.parametrize("full_trace", [False, True])
 def test_json_logs_redact_messages_exceptions_and_unknown_fields(full_trace: bool) -> None:
     formatter = JsonFormatter(full_exception_trace=full_trace)
@@ -148,10 +181,14 @@ def test_json_logs_redact_messages_exceptions_and_unknown_fields(full_trace: boo
         )
     payload = json.loads(formatter.format(record))
     assert payload["run_id"] == "stable" and payload["error.type"] == "RuntimeError"
-    assert PRIVATE not in json.dumps(payload)
-    third_party = logging.makeLogRecord({"name": "sdk", "msg": PRIVATE, "args": ()})
-    assert PRIVATE not in formatter.format(third_party)
-    assert ("exception.frames" in payload) == full_trace
+    assert payload["dropped_fields"] == ["prompt"]
+    # Full detail renders the exception message; safe mode never does.
+    assert (PRIVATE in json.dumps(payload)) == full_trace
+    assert ("exception.stacktrace" in payload) == full_trace
+    third_party = logging.makeLogRecord(
+        {"name": "sdk", "msg": "retry with Bearer %s", "args": ("sk-canary-7f3a9c",)}
+    )
+    assert json.loads(formatter.format(third_party))["message"] == "retry with Bearer [REDACTED]"
 
 
 class BrokenExporter(SpanExporter):

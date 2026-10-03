@@ -114,9 +114,11 @@ class ModelTelemetry(AsyncCallbackHandler):
                 observation.partial_truncated |= len(text) > remaining
         if observation is not None and not observation.first_chunk:
             observation.first_chunk = True
+            elapsed = perf_counter() - observation.started
             self.telemetry.measurements.model_first.record(
-                perf_counter() - observation.started, {"gen_ai.request.model": self.model_id}
+                elapsed, {"gen_ai.request.model": self.model_id}
             )
+            observation.span.set_attribute("gen_ai.response.time_to_first_chunk", elapsed)
 
     async def on_llm_end(self, response: LLMResult, *, run_id: UUID, **kwargs: Any) -> None:
         observation = self.observations.pop(run_id, None)

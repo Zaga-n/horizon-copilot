@@ -82,10 +82,12 @@ class TurnObservation:
         self._span.end()
 
     def answer_started(self) -> None:
-        """Record time to the first visible answer text, once per attempt."""
+        """Record time to the first visible answer text, once per attempt, on metric and root."""
         if not self._first_answer_recorded:
             self._first_answer_recorded = True
-            self._measurements.agent_first.record(perf_counter() - self._started)
+            elapsed = perf_counter() - self._started
+            self._measurements.agent_first.record(elapsed)
+            self._span.set_attribute("app.agent.time_to_first_chunk", elapsed)
 
     def completed(self) -> None:
         logger.info("turn_completed", extra=self._log_fields)

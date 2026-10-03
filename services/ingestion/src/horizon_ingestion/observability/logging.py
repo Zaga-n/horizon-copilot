@@ -19,6 +19,8 @@ EVENTS = frozenset(
         "ingestion_job_corrupt",
         "ingestion_claim_release_unavailable",
         "ingestion_heartbeat_unavailable",
+        "ingestion_heartbeat_failed",
+        "ingestion_status_corrupt",
         "request_failed",
     }
 )

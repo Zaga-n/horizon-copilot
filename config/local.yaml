@@ -1,2 +1,3 @@
 # Local keys override base.yaml.
 identity_mode: local
+log_full_exception_trace: true

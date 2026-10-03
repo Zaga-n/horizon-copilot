@@ -127,7 +127,8 @@ Define it where the service defines the others (`observability/metrics.py` / `ob
 chat, `observability/tracing.py` for ingestion). Then:
 
 - **Log events and fields** are allowlisted in the service's `observability/logging.py` (`EVENTS` and field
-  sets); anything else becomes `library_log`.
+  sets); an unregistered snake_case event keeps its name with `event.unregistered=true`, and any other
+  message text from service code is never written.
 - **Span and metric attributes** must also be added to the Collector allowlists in
   [`dev/stack/collector/config.yaml`](../../dev/stack/collector/config.yaml), or they are dropped before
   storage; span names also need to match `filter/genai` to reach Langfuse.

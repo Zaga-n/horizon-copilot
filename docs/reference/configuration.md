@@ -131,7 +131,7 @@ Defaults come from [`config/base.yaml`](../../config/base.yaml) and
 | `provider_read_timeout_seconds` | float > 0 | 30 | Bedrock read timeout |
 | `readiness_timeout_seconds` | float > 0 | 5 | `/ready` bound |
 | `log_level` | `DEBUG`…`CRITICAL` | `INFO` | Root log level |
-| `log_full_exception_trace` | bool | `false` | Adds file/function/line frames to error logs |
+| `log_full_exception_trace` | bool | `false` | Adds the redacted exception message and chained stacktrace to error logs |
 
 A word search found a reference outside the settings module for every field above, so none is an
 obviously unwired knob. Retry, deadline and budget semantics: [chat service](../services/chat.md).
